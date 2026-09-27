@@ -25,6 +25,8 @@ CREATE DATABASE call_center;
 
 ## Запуск
 
+powershell -ExecutionPolicy Bypass -File .\run.ps1
+
 Требуется JDK 17+ и Maven 3.9+.
 
 ```powershell
