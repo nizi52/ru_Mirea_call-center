@@ -4,14 +4,13 @@ public class Operator {
     private Integer id;
     private String fullName;
     private String login;
-    private String department;
+    private Integer departmentId;
+    private String departmentName;
     private boolean active;
 
-    public Operator(Integer id, String fullName, String login, String department, boolean active) {
-        this.id = id; this.fullName = fullName; this.login = login; this.department = department; this.active = active;
-    }
-    public Operator(String fullName, String login, String department, boolean active) {
-        this(null, fullName, login, department, active);
+    public Operator(Integer id, String fullName, String login, Integer departmentId, String departmentName, boolean active) {
+        this.id = id; this.fullName = fullName; this.login = login; this.departmentId = departmentId;
+        this.departmentName = departmentName; this.active = active;
     }
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -19,11 +18,13 @@ public class Operator {
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getLogin() { return login; }
     public void setLogin(String login) { this.login = login; }
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { this.department = department; }
+    public Integer getDepartmentId() { return departmentId; }
+    public void setDepartmentId(Integer departmentId) { this.departmentId = departmentId; }
+    public String getDepartmentName() { return departmentName; }
+    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     @Override public String toString() {
-        return "%d | %s | %s | %s | %s".formatted(id, fullName, login, department, active ? "активен" : "неактивен");
+        return "%d | %s | %s | отдел: %s (ID %d) | %s".formatted(id, fullName, login, departmentName, departmentId, active ? "активен" : "неактивен");
     }
 }

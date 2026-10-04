@@ -11,7 +11,12 @@ public final class DatabaseManager {
     private static final Properties PROPERTIES = loadProperties();
     private DatabaseManager() { }
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(PROPERTIES.getProperty("db.url"), PROPERTIES.getProperty("db.user"), PROPERTIES.getProperty("db.password"));
+        return DriverManager.getConnection(setting("CALLCENTER_DB_URL", "db.url"),
+                setting("CALLCENTER_DB_USER", "db.user"), setting("CALLCENTER_DB_PASSWORD", "db.password"));
+    }
+    private static String setting(String environmentName, String propertyName) {
+        String value = System.getenv(environmentName);
+        return value == null ? PROPERTIES.getProperty(propertyName) : value;
     }
     private static Properties loadProperties() {
         Properties properties = new Properties();
