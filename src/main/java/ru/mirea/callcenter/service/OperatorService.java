@@ -12,6 +12,7 @@ public class OperatorService {
     private final DepartmentService departments;
     public OperatorService(OperatorRepository repository, DepartmentService departments) { this.repository=repository; this.departments=departments; }
     public List<Operator> getAll() throws SQLException { return repository.findAll(); }
+    public List<Operator> getActive() throws SQLException { return repository.findAll().stream().filter(Operator::isActive).toList(); }
     public Operator getById(int id) throws SQLException { return repository.findById(id).orElseThrow(()->new EntityNotFoundException("Оператор с ID " + id + " не найден.")); }
     public Operator create(Operator operator) throws SQLException { validate(operator); return repository.save(operator); }
     public Operator update(Operator operator) throws SQLException { getById(operator.getId()); validate(operator); return repository.save(operator); }

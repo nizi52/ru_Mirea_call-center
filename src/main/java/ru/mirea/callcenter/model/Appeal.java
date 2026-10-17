@@ -13,6 +13,7 @@ public class Appeal {
     private AppealStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime closedAt;
+    private String operatorName;
 
     public Appeal(Integer id, Integer operatorId, Integer clientId, String clientName, String clientPhone, String topic, String category,
                   AppealStatus status, LocalDateTime createdAt, LocalDateTime closedAt) {
@@ -29,6 +30,7 @@ public class Appeal {
     public AppealStatus getStatus() { return status; } public void setStatus(AppealStatus v) { status=v; }
     public LocalDateTime getCreatedAt() { return createdAt; } public void setCreatedAt(LocalDateTime v) { createdAt=v; }
     public LocalDateTime getClosedAt() { return closedAt; } public void setClosedAt(LocalDateTime v) { closedAt=v; }
+    public String getOperatorName() { return operatorName; } public void setOperatorName(String v) { operatorName=v; }
     @Override public String toString() {
         return "%d | клиент: %s (ID %d), %s | оператор: %s | %s | %s | %s | создано: %s | закрыто: %s".formatted(
                 id, clientName, clientId, clientPhone, operatorId == null ? "не назначен" : operatorId,

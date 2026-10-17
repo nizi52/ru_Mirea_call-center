@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ru.mirea.callcenter.ui.controller.AppealFormController"
+      spacing="14" prefWidth="500" styleClass="root-pane">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label fx:id="titleLabel" styleClass="title"/>
+    <GridPane hgap="12" vgap="12">
+        <columnConstraints>
+            <ColumnConstraints minWidth="90"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+        <Label text="Клиент *" styleClass="form-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="clientBox" maxWidth="Infinity" promptText="Выберите клиента" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <Label text="Оператор" styleClass="form-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <HBox spacing="6" GridPane.rowIndex="1" GridPane.columnIndex="1">
+            <ComboBox fx:id="operatorBox" maxWidth="Infinity" HBox.hgrow="ALWAYS" promptText="Не назначен"/>
+            <Button text="×" onAction="#onClearOperator" styleClass="secondary-button"/>
+        </HBox>
+
+        <Label text="Категория *" styleClass="form-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="categoryBox" maxWidth="Infinity" promptText="Выберите категорию" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="Тема *" styleClass="form-label" GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.valignment="TOP"/>
+        <VBox spacing="4" GridPane.rowIndex="3" GridPane.columnIndex="1">
+            <TextArea fx:id="topicArea" wrapText="true" prefRowCount="4" promptText="Кратко опишите обращение"/>
+            <Label fx:id="counterLabel" text="0 / 300" styleClass="hint-label"/>
+        </VBox>
+    </GridPane>
+    <Label fx:id="errorLabel" wrapText="true" styleClass="error-label"/>
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button fx:id="saveButton" text="Сохранить" onAction="#onSave" defaultButton="true" styleClass="primary-button"/>
+        <Button text="Отмена" onAction="#onCancel" cancelButton="true" styleClass="secondary-button"/>
+    </HBox>
+</VBox>

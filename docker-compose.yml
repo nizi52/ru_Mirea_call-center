@@ -1,0 +1,27 @@
+# PostgreSQL для проекта колл-центра (база из КР1).
+# Запуск:    docker compose up -d --wait
+# Остановка: docker compose down        (данные сохраняются в volume callcenter-pgdata)
+# Не используйте `down -v`: ключ -v удаляет volume вместе с данными.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: callcenter-pg
+    environment:
+      POSTGRES_DB: call_center
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${CALLCENTER_DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - callcenter-pgdata:/var/lib/postgresql/data
+      # скрипт выполняется только при первом создании пустого volume
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d call_center"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  callcenter-pgdata:
+    name: callcenter-pgdata
