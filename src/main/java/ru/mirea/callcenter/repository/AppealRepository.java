@@ -30,6 +30,26 @@ public class AppealRepository implements Repository<Appeal, Integer> {
         String sql="SELECT count(*) FROM appeals WHERE operator_id=? AND status IN ('NEW','IN_PROGRESS','ESCALATED')";
         try(Connection c=DatabaseManager.getConnection();PreparedStatement ps=c.prepareStatement(sql)){ps.setInt(1,operatorId);try(ResultSet rs=ps.executeQuery()){rs.next();return rs.getLong(1);}}
     }
+    /** Количество активных обращений по каждому оператору: operator_id → count (одним запросом). */
+    public Map<Integer, Long> countActiveGroupedByOperator() throws SQLException {
+        String sql = "SELECT operator_id, count(*) FROM appeals WHERE operator_id IS NOT NULL "
+                + "AND status IN ('NEW','IN_PROGRESS','ESCALATED') GROUP BY operator_id";
+        Map<Integer, Long> result = new HashMap<>();
+        try (Connection c = DatabaseManager.getConnection(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) result.put(rs.getInt(1), rs.getLong(2));
+        }
+        return result;
+    }
+    /** Количество обращений по каждому клиенту: client_id → count. */
+    public Map<Integer, Long> countGroupedByClient() throws SQLException {
+        Map<Integer, Long> result = new HashMap<>();
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement ps = c.prepareStatement("SELECT client_id, count(*) FROM appeals GROUP BY client_id");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) result.put(rs.getInt(1), rs.getLong(2));
+        }
+        return result;
+    }
     private void fill(PreparedStatement ps,Appeal a)throws SQLException {
         if(a.getOperatorId()==null)ps.setNull(1,Types.INTEGER);else ps.setInt(1,a.getOperatorId()); ps.setInt(2,a.getClientId());ps.setString(3,a.getTopic());ps.setString(4,a.getCategory());ps.setString(5,a.getStatus().name());ps.setTimestamp(6,Timestamp.valueOf(a.getCreatedAt()));if(a.getClosedAt()==null)ps.setNull(7,Types.TIMESTAMP);else ps.setTimestamp(7,Timestamp.valueOf(a.getClosedAt()));
     }

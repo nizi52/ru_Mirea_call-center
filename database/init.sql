@@ -1,12 +1,12 @@
 DROP TABLE IF EXISTS appeals;
 DROP TABLE IF EXISTS operators;
 DROP TABLE IF EXISTS clients;
-DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS call_centers;
 
-CREATE TABLE departments (
+CREATE TABLE call_centers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(80) NOT NULL UNIQUE,
-    description VARCHAR(300),
+    address VARCHAR(200) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE operators (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(150) NOT NULL,
     login VARCHAR(50) NOT NULL UNIQUE,
-    department_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
+    call_center_id INTEGER NOT NULL REFERENCES call_centers(id) ON DELETE RESTRICT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -39,9 +39,9 @@ CREATE TABLE appeals (
     CONSTRAINT closed_date_matches_status CHECK ((status = 'CLOSED') = (closed_at IS NOT NULL))
 );
 
-INSERT INTO departments(name,description,is_active) VALUES
-('Техподдержка','Техническая помощь клиентам',TRUE),('Продажи','Консультации и подключение услуг',TRUE),('Биллинг','Платежи и возвраты',TRUE),('Контроль качества','Работа с жалобами',FALSE);
-INSERT INTO operators(full_name, login, department_id, is_active) VALUES
+INSERT INTO call_centers(name,address,is_active) VALUES
+('Центральный офис','Москва, ул. Тверская, 10',TRUE),('Северный филиал','Санкт-Петербург, Невский пр., 25',TRUE),('Южный филиал','Краснодар, ул. Красная, 50',TRUE),('Старый офис','Казань, ул. Баумана, 7',FALSE);
+INSERT INTO operators(full_name, login, call_center_id, is_active) VALUES
 ('Анна Иванова','aivanova',1,TRUE),('Пётр Смирнов','psmirnov',2,TRUE),('Мария Кузнецова','mkuznetsova',3,TRUE),('Илья Орлов','iorlov',1,TRUE),('Елена Волкова','evolkova',4,FALSE);
 INSERT INTO clients(full_name,phone,email) VALUES
 ('Иван Петров','+79990000001','ivan@example.com'),('Ольга Соколова','+79990000002','olga@example.com'),('Денис Егоров','+79990000003','denis@example.com'),('Светлана Белова','+79990000004','svetlana@example.com'),('Артём Лебедев','+79990000005','artem@example.com'),('Кирилл Фёдоров','+79990000006','kirill@example.com'),('Наталья Романова','+79990000007','natalia@example.com'),('Роман Павлов','+79990000008','roman@example.com'),('Вера Котова','+79990000009','vera@example.com'),('Максим Гусев','+79990000010','maxim@example.com');

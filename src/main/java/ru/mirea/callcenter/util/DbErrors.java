@@ -5,6 +5,12 @@ import java.sql.SQLException;
 public final class DbErrors {
     private DbErrors() { }
 
+    public static boolean isUniqueViolation(SQLException e) { return "23505".equals(e.getSQLState()); }
+
+    public static boolean isCheckViolation(SQLException e) { return "23514".equals(e.getSQLState()); }
+
+    public static boolean isForeignKeyViolation(SQLException e) { return "23503".equals(e.getSQLState()); }
+
     public static String toMessage(SQLException e) {
         String state = e.getSQLState() == null ? "" : e.getSQLState();
         return switch (state) {

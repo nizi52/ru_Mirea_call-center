@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ru.mirea.callcenter.ui.controller.HomeController"
+      spacing="16" styleClass="root-pane">
+    <padding><Insets top="24" right="24" bottom="20" left="24"/></padding>
+    <Label text="Колл-центр" styleClass="title"/>
+    <Label text="Выберите раздел: каждый откроется в отдельном окне." styleClass="hint-label"/>
+
+    <GridPane hgap="14" vgap="14" VBox.vgrow="ALWAYS">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="50"/>
+            <ColumnConstraints percentWidth="50"/>
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="50" vgrow="ALWAYS"/>
+            <RowConstraints percentHeight="50" vgrow="ALWAYS"/>
+        </rowConstraints>
+
+        <Button onAction="#onAppeals" styleClass="nav-tile" maxWidth="Infinity" maxHeight="Infinity"
+                GridPane.rowIndex="0" GridPane.columnIndex="0">
+            <graphic>
+                <VBox spacing="6">
+                    <Label text="Обращения" styleClass="nav-title"/>
+                    <Label fx:id="appealsCount" styleClass="nav-caption"/>
+                </VBox>
+            </graphic>
+        </Button>
+        <Button onAction="#onClients" styleClass="nav-tile" maxWidth="Infinity" maxHeight="Infinity"
+                GridPane.rowIndex="0" GridPane.columnIndex="1">
+            <graphic>
+                <VBox spacing="6">
+                    <Label text="Клиенты" styleClass="nav-title"/>
+                    <Label fx:id="clientsCount" styleClass="nav-caption"/>
+                </VBox>
+            </graphic>
+        </Button>
+        <Button onAction="#onOperators" styleClass="nav-tile" maxWidth="Infinity" maxHeight="Infinity"
+                GridPane.rowIndex="1" GridPane.columnIndex="0">
+            <graphic>
+                <VBox spacing="6">
+                    <Label text="Операторы" styleClass="nav-title"/>
+                    <Label fx:id="operatorsCount" styleClass="nav-caption"/>
+                </VBox>
+            </graphic>
+        </Button>
+        <Button onAction="#onCallCenters" styleClass="nav-tile" maxWidth="Infinity" maxHeight="Infinity"
+                GridPane.rowIndex="1" GridPane.columnIndex="1">
+            <graphic>
+                <VBox spacing="6">
+                    <Label text="Колл-центры" styleClass="nav-title"/>
+                    <Label fx:id="callCentersCount" styleClass="nav-caption"/>
+                </VBox>
+            </graphic>
+        </Button>
+    </GridPane>
+    <Label fx:id="statusLabel" styleClass="hint-label" wrapText="true"/>
+</VBox>

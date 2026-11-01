@@ -17,6 +17,7 @@ import ru.mirea.callcenter.service.AppealStatistics;
 import ru.mirea.callcenter.ui.AppContext;
 import ru.mirea.callcenter.ui.util.AlertUtil;
 import ru.mirea.callcenter.ui.util.Labels;
+import ru.mirea.callcenter.ui.util.Refreshable;
 import ru.mirea.callcenter.ui.util.UiErrors;
 import ru.mirea.callcenter.ui.util.WindowFactory;
 import javafx.stage.FileChooser;
@@ -29,7 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 
-public class MainController {
+public class MainController implements Refreshable {
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final AppealService appealService = AppContext.appeals();
@@ -131,11 +132,19 @@ public class MainController {
                 fromDate.getValue(), toDate.getValue(), sortBox.getValue());
     }
 
+    /** Вызывается после изменений в любом окне (например, переименовали клиента). */
+    @Override
+    public void refresh() { reload(); }
+
     private void reload() {
         if (suppressReload) return;
+        Appeal selected = appealTable.getSelectionModel().getSelectedItem();
         try {
             List<Appeal> found = appealService.find(currentFilter());
             appeals.setAll(found);
+            // после перезагрузки возвращаем выделение на то же обращение
+            if (selected != null) found.stream().filter(a -> a.getId().equals(selected.getId())).findFirst()
+                    .ifPresent(a -> appealTable.getSelectionModel().select(a));
             showInfo("Показано обращений: " + found.size(), false);
         } catch (Exception e) {
             showInfo(UiErrors.message(e), true);
@@ -203,7 +212,7 @@ public class MainController {
             Appeal fresh = appeal == null ? null : appealService.getById(appeal.getId());
             AppealFormController form = WindowFactory.<AppealFormController>openModal(owner(), "appeal-form.fxml",
                     appeal == null ? "Новое обращение" : "Редактирование обращения", c -> c.setAppeal(fresh));
-            if (form.isSaved()) reload();
+            if (form.isSaved()) WindowFactory.refreshAll();
         });
     }
 
@@ -238,7 +247,7 @@ public class MainController {
         dialog.setHeaderText("Текущий статус: " + Labels.status(selected.getStatus()));
         dialog.setContentText("Новый статус:");
         dialog.showAndWait().ifPresent(choice -> {
-            if (AlertUtil.run(() -> appealService.changeStatus(selected.getId(), options.get(choice)))) reload();
+            if (AlertUtil.run(() -> appealService.changeStatus(selected.getId(), options.get(choice)))) WindowFactory.refreshAll();
         });
     }
 
@@ -249,7 +258,7 @@ public class MainController {
         boolean confirmed = AlertUtil.confirm("Удаление обращения",
                 "Удалить обращение клиента «" + selected.getClientName() + "»?",
                 "Тема: " + selected.getTopic() + "\nДействие нельзя отменить.");
-        if (confirmed && AlertUtil.run(() -> appealService.delete(selected.getId()))) reload();
+        if (confirmed && AlertUtil.run(() -> appealService.delete(selected.getId()))) WindowFactory.refreshAll();
     }
 
     private Appeal requireSelection() {

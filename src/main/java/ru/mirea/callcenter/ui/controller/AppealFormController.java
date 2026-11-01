@@ -40,7 +40,7 @@ public class AppealFormController {
     private void initialize() {
         fields = Map.of("client", clientBox, "operator", operatorBox, "category", categoryBox, "topic", topicArea);
         clientBox.setConverter(converter(c -> c.getFullName() + ", " + c.getPhone()));
-        operatorBox.setConverter(converter(o -> o.getFullName() + " (" + o.getDepartmentName() + ")"));
+        operatorBox.setConverter(converter(o -> o.getFullName() + " (" + o.getCallCenterName() + ")"));
         categoryBox.setConverter(converter(Labels::category));
         categoryBox.setItems(FXCollections.observableArrayList(AppealService.categories()));
         topicArea.textProperty().addListener((obs, old, now) ->

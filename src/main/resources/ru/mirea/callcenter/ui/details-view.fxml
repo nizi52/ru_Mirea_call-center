@@ -42,8 +42,8 @@
         <Label fx:id="operatorNameValue" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
         <Label text="Логин" styleClass="form-label" GridPane.rowIndex="1"/>
         <Label fx:id="operatorLoginValue" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-        <Label text="Отдел" styleClass="form-label" GridPane.rowIndex="2"/>
-        <Label fx:id="operatorDepartmentValue" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <Label text="Колл-центр" styleClass="form-label" GridPane.rowIndex="2"/>
+        <Label fx:id="operatorCallCenterValue" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
         <Label text="Состояние" styleClass="form-label" GridPane.rowIndex="3"/>
         <Label fx:id="operatorActiveValue" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
     </GridPane>

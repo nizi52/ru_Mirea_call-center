@@ -22,6 +22,8 @@ public class AppealService {
         this.clientService = clientService;
     }
 
+    public static int maxActivePerOperator() { return MAX_ACTIVE_PER_OPERATOR; }
+
     public static List<String> categories() { return List.of("TECH", "COMPLAINT", "CONSULTATION", "BILLING"); }
 
     // ---------- CRUD ----------
@@ -92,6 +94,12 @@ public class AppealService {
         Operator operator = appeal.getOperatorId() == null ? null : operatorService.getById(appeal.getOperatorId());
         return new AppealDetails(appeal, client, operator);
     }
+
+    /** Сколько активных обращений у каждого оператора (для окна «Операторы»). */
+    public Map<Integer, Long> activeCountByOperator() throws SQLException { return repository.countActiveGroupedByOperator(); }
+
+    /** Сколько всего обращений у каждого клиента (для окна «Клиенты»). */
+    public Map<Integer, Long> countByClient() throws SQLException { return repository.countGroupedByClient(); }
 
     public AppealStatistics statistics(List<Appeal> appeals) { return AppealStatistics.of(appeals); }
 
