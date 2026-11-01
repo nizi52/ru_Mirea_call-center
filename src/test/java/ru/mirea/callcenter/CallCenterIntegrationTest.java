@@ -119,7 +119,7 @@ class CallCenterIntegrationTest {
         ClientService clients = new ClientService(new ClientRepository());
         OperatorService operators = new OperatorService(new OperatorRepository(), callCenters);
         AppealService appeals = new AppealService(new AppealRepository(), operators, clients);
-        String suffix = Long.toString(System.nanoTime()).substring(4);
+        String suffix = String.format("%011d", System.nanoTime() % 100_000_000_000L); // всегда 11 цифр
 
         // неверные поля: исключение указывает, какое поле подсветить в форме
         assertEquals("phone", assertThrows(BusinessException.class,
@@ -178,6 +178,23 @@ class CallCenterIntegrationTest {
             appeals.delete(working.getId());
             operators.delete(operator.getId());
             assertNull(appeals.getById(appeal.getId()).getOperatorId());
+
+            // неактивный клиент: пропадает из getActive, новое обращение на него завести нельзя,
+            // а старое обращение по-прежнему можно редактировать
+            client.setActive(false);
+            clients.update(client);
+            assertFalse(clients.getById(client.getId()).isActive());
+            assertTrue(clients.getActive().stream().noneMatch(c -> c.getId().equals(client.getId())));
+            assertEquals("client", assertThrows(BusinessException.class, () -> appeals.create(new Appeal(null, null,
+                    client.getId(), null, null, "Ещё " + suffix, "TECH", AppealStatus.NEW, null, null))).getField());
+            Appeal old = appeals.getById(appeal.getId());
+            old.setTopic("Тема правка " + suffix);
+            appeals.updateDetails(old);
+
+            // активность обращения выводится из статуса и работает в фильтре «Только активные»
+            assertTrue(old.isActive());
+            AppealFilter activeOnly = new AppealFilter(suffix, null, null, null, null, AppealFilter.SortField.ID, true);
+            assertEquals(1, appeals.find(activeOnly).size());
         } finally {
             if (appeal != null) appeals.delete(appeal.getId());
             if (operators.getAll().stream().anyMatch(o -> o.getId().equals(operator.getId()))) operators.delete(operator.getId());

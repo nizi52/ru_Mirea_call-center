@@ -3,6 +3,7 @@ package ru.mirea.callcenter.ui.controller;
 import javafx.beans.property.ReadOnlyLongWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableColumn;
 import ru.mirea.callcenter.model.Client;
 import ru.mirea.callcenter.ui.AppContext;
@@ -12,7 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ClientsController extends EntityListController<Client> {
-    @FXML private TableColumn<Client, String> nameColumn, phoneColumn, emailColumn;
+    @FXML private TableColumn<Client, String> nameColumn, phoneColumn, emailColumn, activeColumn;
+    @FXML private CheckBox activeOnlyCheck;
     @FXML private TableColumn<Client, Number> appealsColumn;
 
     /** Сколько обращений у каждого клиента (client_id → количество). */
@@ -24,8 +26,17 @@ public class ClientsController extends EntityListController<Client> {
         phoneColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getPhone()));
         emailColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
                 c.getValue().getEmail() == null ? "—" : c.getValue().getEmail()));
+        activeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().isActive() ? "Активен" : "Неактивен"));
         appealsColumn.setCellValueFactory(c -> new ReadOnlyLongWrapper(appealCounts.getOrDefault(c.getValue().getId(), 0L)));
     }
+
+    @Override
+    protected void setupExtraFilters() {
+        activeOnlyCheck.selectedProperty().addListener((obs, old, now) -> applyFilter());
+    }
+
+    @Override
+    protected boolean extraFilter(Client c) { return !activeOnlyCheck.isSelected() || c.isActive(); }
 
     @Override
     protected List<Client> load() throws Exception {
@@ -53,4 +64,10 @@ public class ClientsController extends EntityListController<Client> {
 
     @Override
     protected void delete(Client c) throws Exception { AppContext.clients().delete(c.getId()); }
+
+    @FXML
+    private void onResetFilters() {
+        searchField.clear();
+        activeOnlyCheck.setSelected(false);
+    }
 }

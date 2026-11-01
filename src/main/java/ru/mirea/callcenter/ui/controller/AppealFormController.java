@@ -39,14 +39,14 @@ public class AppealFormController {
     @FXML
     private void initialize() {
         fields = Map.of("client", clientBox, "operator", operatorBox, "category", categoryBox, "topic", topicArea);
-        clientBox.setConverter(converter(c -> c.getFullName() + ", " + c.getPhone()));
+        clientBox.setConverter(converter(c -> c.getFullName() + ", " + c.getPhone() + (c.isActive() ? "" : " (неактивен)")));
         operatorBox.setConverter(converter(o -> o.getFullName() + " (" + o.getCallCenterName() + ")"));
         categoryBox.setConverter(converter(Labels::category));
         categoryBox.setItems(FXCollections.observableArrayList(AppealService.categories()));
         topicArea.textProperty().addListener((obs, old, now) ->
                 counterLabel.setText(now.trim().length() + " / " + MAX_TOPIC));
         try {
-            clientBox.setItems(FXCollections.observableArrayList(AppContext.clients().getAll()));
+            clientBox.setItems(FXCollections.observableArrayList(AppContext.clients().getActive()));
             operatorBox.setItems(FXCollections.observableArrayList(AppContext.operators().getActive()));
         } catch (Exception e) {
             showError(null, UiErrors.message(e));
@@ -59,11 +59,25 @@ public class AppealFormController {
         this.editing = appeal;
         titleLabel.setText(appeal == null ? "Новое обращение" : "Редактирование обращения");
         if (appeal == null) return;
-        clientBox.getItems().stream().filter(c -> c.getId().equals(appeal.getClientId()))
-                .findFirst().ifPresent(clientBox::setValue);
+        selectClient(appeal.getClientId());
         selectOperator(appeal.getOperatorId());
         categoryBox.setValue(appeal.getCategory());
         topicArea.setText(appeal.getTopic());
+    }
+
+    private void selectClient(Integer clientId) {
+        try {
+            // клиент мог стать неактивным — показываем его, чтобы старое обращение можно было править
+            Client current = clientBox.getItems().stream().filter(c -> c.getId().equals(clientId))
+                    .findFirst().orElse(null);
+            if (current == null) {
+                current = AppContext.clients().getById(clientId);
+                clientBox.getItems().add(current);
+            }
+            clientBox.setValue(current);
+        } catch (Exception e) {
+            showError(null, UiErrors.message(e));
+        }
     }
 
     private void selectOperator(Integer operatorId) {

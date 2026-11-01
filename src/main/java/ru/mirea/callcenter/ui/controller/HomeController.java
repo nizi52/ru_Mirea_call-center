@@ -3,8 +3,8 @@ package ru.mirea.callcenter.ui.controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import ru.mirea.callcenter.model.Appeal;
-import ru.mirea.callcenter.model.AppealStatus;
 import ru.mirea.callcenter.model.CallCenter;
+import ru.mirea.callcenter.model.Client;
 import ru.mirea.callcenter.model.Operator;
 import ru.mirea.callcenter.ui.AppContext;
 import ru.mirea.callcenter.ui.util.AlertUtil;
@@ -25,11 +25,12 @@ public class HomeController implements Refreshable {
     public void refresh() {
         try {
             List<Appeal> appeals = AppContext.appeals().getAll();
-            long open = appeals.stream().filter(a -> a.getStatus() != AppealStatus.CLOSED).count();
+            long active = appeals.stream().filter(Appeal::isActive).count();
             List<Operator> operators = AppContext.operators().getAll();
             List<CallCenter> centers = AppContext.callCenters().getAll();
-            appealsCount.setText(appeals.size() + " всего, не закрыто " + open);
-            clientsCount.setText(AppContext.clients().getAll().size() + " в базе");
+            appealsCount.setText(appeals.size() + " всего, активных " + active);
+            List<Client> clients = AppContext.clients().getAll();
+            clientsCount.setText(clients.stream().filter(Client::isActive).count() + " активных из " + clients.size());
             operatorsCount.setText(operators.stream().filter(Operator::isActive).count() + " активных из " + operators.size());
             callCentersCount.setText(centers.stream().filter(CallCenter::isActive).count() + " работают из " + centers.size());
             statusLabel.setText("База данных подключена");

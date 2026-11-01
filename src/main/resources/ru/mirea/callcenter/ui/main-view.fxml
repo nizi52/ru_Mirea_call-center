@@ -20,6 +20,7 @@
                 <DatePicker fx:id="fromDate" promptText="Создано с" prefWidth="140"/>
                 <DatePicker fx:id="toDate" promptText="Создано по" prefWidth="140"/>
                 <ComboBox fx:id="sortBox" prefWidth="160"/>
+                <CheckBox fx:id="activeOnlyCheck" text="Только активные"/>
                 <Button text="Сбросить" onAction="#onResetFilters" styleClass="secondary-button"/>
             </FlowPane>
         </VBox>
@@ -34,6 +35,7 @@
                 <TableColumn fx:id="topicColumn" text="Тема" prefWidth="220"/>
                 <TableColumn fx:id="categoryColumn" text="Категория" prefWidth="110"/>
                 <TableColumn fx:id="statusColumn" text="Статус" prefWidth="110"/>
+                <TableColumn fx:id="activeColumn" text="Активно" prefWidth="70"/>
                 <TableColumn fx:id="operatorColumn" text="Оператор" prefWidth="150"/>
                 <TableColumn fx:id="createdColumn" text="Создано" prefWidth="130"/>
                 <TableColumn fx:id="closedColumn" text="Закрыто" prefWidth="130"/>

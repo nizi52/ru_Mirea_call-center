@@ -1,6 +1,7 @@
 package ru.mirea.callcenter.ui.controller;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Control;
 import javafx.scene.control.TextField;
 import ru.mirea.callcenter.model.Client;
@@ -10,6 +11,10 @@ import java.util.Map;
 
 public class ClientFormController extends EntityFormController<Client> {
     @FXML private TextField fullNameField, phoneField, emailField;
+    @FXML private CheckBox activeCheck;
+
+    @FXML
+    private void initialize() { activeCheck.setSelected(true); }
 
     @Override
     protected Map<String, Control> fields() {
@@ -24,12 +29,13 @@ public class ClientFormController extends EntityFormController<Client> {
         fullNameField.setText(c.getFullName());
         phoneField.setText(c.getPhone());
         emailField.setText(c.getEmail());
+        activeCheck.setSelected(c.isActive());
     }
 
     @Override
     protected Client build() {
         return new Client(editing == null ? null : editing.getId(),
-                fullNameField.getText(), phoneField.getText(), emailField.getText());
+                fullNameField.getText(), phoneField.getText(), emailField.getText(), activeCheck.isSelected());
     }
 
     @Override

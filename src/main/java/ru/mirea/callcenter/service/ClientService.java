@@ -19,6 +19,8 @@ public class ClientService {
 
     public ClientService(ClientRepository repository) { this.repository = repository; }
     public List<Client> getAll() throws SQLException { return repository.findAll(); }
+    /** Только активные клиенты: на них можно заводить новые обращения. */
+    public List<Client> getActive() throws SQLException { return getAll().stream().filter(Client::isActive).toList(); }
     public Client getById(int id) throws SQLException {
         return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Клиент с ID " + id + " не найден."));
     }

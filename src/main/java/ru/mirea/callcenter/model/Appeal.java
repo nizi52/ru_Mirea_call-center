@@ -31,6 +31,8 @@ public class Appeal {
     public LocalDateTime getCreatedAt() { return createdAt; } public void setCreatedAt(LocalDateTime v) { createdAt=v; }
     public LocalDateTime getClosedAt() { return closedAt; } public void setClosedAt(LocalDateTime v) { closedAt=v; }
     public String getOperatorName() { return operatorName; } public void setOperatorName(String v) { operatorName=v; }
+    /** Активно = ещё в работе (NEW, IN_PROGRESS, ESCALATED). Хранится не в БД, а выводится из статуса. */
+    public boolean isActive() { return status == AppealStatus.NEW || status == AppealStatus.IN_PROGRESS || status == AppealStatus.ESCALATED; }
     @Override public String toString() {
         return "%d | клиент: %s (ID %d), %s | оператор: %s | %s | %s | %s | создано: %s | закрыто: %s".formatted(
                 id, clientName, clientId, clientPhone, operatorId == null ? "не назначен" : operatorId,

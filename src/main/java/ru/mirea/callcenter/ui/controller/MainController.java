@@ -44,12 +44,14 @@ public class MainController implements Refreshable {
     @FXML private DatePicker fromDate;
     @FXML private DatePicker toDate;
     @FXML private ComboBox<SortField> sortBox;
+    @FXML private CheckBox activeOnlyCheck;
     @FXML private TableView<Appeal> appealTable;
     @FXML private TableColumn<Appeal, String> clientColumn;
     @FXML private TableColumn<Appeal, String> phoneColumn;
     @FXML private TableColumn<Appeal, String> topicColumn;
     @FXML private TableColumn<Appeal, String> categoryColumn;
     @FXML private TableColumn<Appeal, String> statusColumn;
+    @FXML private TableColumn<Appeal, String> activeColumn;
     @FXML private TableColumn<Appeal, String> operatorColumn;
     @FXML private TableColumn<Appeal, LocalDateTime> createdColumn;
     @FXML private TableColumn<Appeal, LocalDateTime> closedColumn;
@@ -82,6 +84,7 @@ public class MainController implements Refreshable {
         topicColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getTopic()));
         categoryColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(Labels.category(c.getValue().getCategory())));
         statusColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(Labels.status(c.getValue().getStatus())));
+        activeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().isActive() ? "Да" : "Нет"));
         operatorColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
                 c.getValue().getOperatorName() == null ? "не назначен" : c.getValue().getOperatorName()));
         createdColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getCreatedAt()));
@@ -116,6 +119,7 @@ public class MainController implements Refreshable {
         fromDate.valueProperty().addListener((obs, old, now) -> reload());
         toDate.valueProperty().addListener((obs, old, now) -> reload());
         sortBox.valueProperty().addListener((obs, old, now) -> reload());
+        activeOnlyCheck.selectedProperty().addListener((obs, old, now) -> reload());
     }
 
     private <T> StringConverter<T> converter(Function<T, String> toText) {
@@ -129,7 +133,7 @@ public class MainController implements Refreshable {
 
     private AppealFilter currentFilter() {
         return new AppealFilter(searchField.getText(), statusFilter.getValue(), categoryFilter.getValue(),
-                fromDate.getValue(), toDate.getValue(), sortBox.getValue());
+                fromDate.getValue(), toDate.getValue(), sortBox.getValue(), activeOnlyCheck.isSelected());
     }
 
     /** Вызывается после изменений в любом окне (например, переименовали клиента). */
@@ -227,6 +231,7 @@ public class MainController implements Refreshable {
         fromDate.setValue(null);
         toDate.setValue(null);
         sortBox.setValue(SortField.CREATED_NEWEST);
+        activeOnlyCheck.setSelected(false);
         suppressReload = false;
         reload();
     }

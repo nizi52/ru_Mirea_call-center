@@ -19,6 +19,8 @@
         <TextField fx:id="phoneField" promptText="+79990000000" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
         <Label text="Email" styleClass="form-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
         <TextField fx:id="emailField" promptText="name@mail.ru (необязательно)" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <Label text="Статус" styleClass="form-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <CheckBox fx:id="activeCheck" text="Активен (можно заводить обращения)" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
     </GridPane>
     <Label fx:id="errorLabel" wrapText="true" styleClass="error-label"/>
     <HBox spacing="10" alignment="CENTER_RIGHT">

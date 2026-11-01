@@ -14,7 +14,8 @@ CREATE TABLE clients (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(150) NOT NULL,
     phone VARCHAR(30) NOT NULL UNIQUE,
-    email VARCHAR(150)
+    email VARCHAR(150),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE operators (
@@ -45,6 +46,8 @@ INSERT INTO operators(full_name, login, call_center_id, is_active) VALUES
 ('Анна Иванова','aivanova',1,TRUE),('Пётр Смирнов','psmirnov',2,TRUE),('Мария Кузнецова','mkuznetsova',3,TRUE),('Илья Орлов','iorlov',1,TRUE),('Елена Волкова','evolkova',4,FALSE);
 INSERT INTO clients(full_name,phone,email) VALUES
 ('Иван Петров','+79990000001','ivan@example.com'),('Ольга Соколова','+79990000002','olga@example.com'),('Денис Егоров','+79990000003','denis@example.com'),('Светлана Белова','+79990000004','svetlana@example.com'),('Артём Лебедев','+79990000005','artem@example.com'),('Кирилл Фёдоров','+79990000006','kirill@example.com'),('Наталья Романова','+79990000007','natalia@example.com'),('Роман Павлов','+79990000008','roman@example.com'),('Вера Котова','+79990000009','vera@example.com'),('Максим Гусев','+79990000010','maxim@example.com');
+INSERT INTO clients(full_name,phone,email,is_active) VALUES
+('Григорий Шилов','+79990000011','grigory@example.com',FALSE);
 INSERT INTO appeals(operator_id,client_id,topic,category,status,created_at,closed_at) VALUES
 (1,1,'Не работает интернет','TECH','IN_PROGRESS','2026-09-01 09:00',NULL),
 (1,2,'Ошибка авторизации','TECH','ESCALATED','2026-09-02 10:00',NULL),

@@ -39,7 +39,7 @@ public class AppealService {
         appeal.setStatus(AppealStatus.NEW);
         appeal.setCreatedAt(LocalDateTime.now());
         appeal.setClosedAt(null);
-        validateFields(appeal);
+        validateFields(appeal, null);
         validateAssignment(appeal, null);
         return repository.save(appeal);
     }
@@ -49,7 +49,7 @@ public class AppealService {
         edited.setStatus(old.getStatus());
         edited.setCreatedAt(old.getCreatedAt());
         edited.setClosedAt(old.getClosedAt());
-        validateFields(edited);
+        validateFields(edited, old);
         validateAssignment(edited, old);
         return repository.save(edited);
     }
@@ -80,6 +80,7 @@ public class AppealService {
         String q = f.text() == null ? "" : f.text().trim().toLowerCase();
         return getAll().stream()
                 .filter(a -> q.isEmpty() || matchesText(a, q))
+                .filter(a -> !f.activeOnly() || a.isActive())
                 .filter(a -> f.status() == null || a.getStatus() == f.status())
                 .filter(a -> f.category() == null || a.getCategory().equals(f.category()))
                 .filter(a -> f.from() == null || !a.getCreatedAt().toLocalDate().isBefore(f.from()))
@@ -116,7 +117,7 @@ public class AppealService {
 
     // ---------- Валидация ----------
 
-    private void validateFields(Appeal a) throws SQLException {
+    private void validateFields(Appeal a, Appeal previous) throws SQLException {
         if (a.getClientId() == null) throw new BusinessException("client", "Поле «Клиент»: выберите клиента из списка.");
         if (blank(a.getTopic())) throw new BusinessException("topic", "Поле «Тема»: введите тему обращения.");
         int length = a.getTopic().trim().length();
@@ -126,6 +127,10 @@ public class AppealService {
             throw new BusinessException("category", "Поле «Категория»: выберите категорию из списка.");
         a.setTopic(a.getTopic().trim());
         Client client = clientService.getById(a.getClientId());
+        // старое обращение неактивного клиента можно править, а новое на него завести нельзя
+        boolean sameClient = previous != null && Objects.equals(previous.getClientId(), a.getClientId());
+        if (!sameClient && !client.isActive())
+            throw new BusinessException("client", "Поле «Клиент»: клиент неактивен, на него нельзя завести обращение.");
         a.setClientName(client.getFullName());
         a.setClientPhone(client.getPhone());
     }
@@ -138,7 +143,7 @@ public class AppealService {
         boolean unchanged = previous != null && Objects.equals(previous.getOperatorId(), a.getOperatorId());
         if (!unchanged && !operator.isActive())
             throw new BusinessException("operator", "Поле «Оператор»: нельзя назначить неактивного оператора, выберите другого.");
-        if (!unchanged && isActive(a) && repository.countActiveByOperator(a.getOperatorId()) >= MAX_ACTIVE_PER_OPERATOR)
+        if (!unchanged && a.isActive() && repository.countActiveByOperator(a.getOperatorId()) >= MAX_ACTIVE_PER_OPERATOR)
             throw new BusinessException("operator", "Поле «Оператор»: у оператора уже " + MAX_ACTIVE_PER_OPERATOR + " активных обращений, выберите другого.");
     }
 
@@ -157,10 +162,6 @@ public class AppealService {
             case CREATED_OLDEST -> Comparator.comparing(Appeal::getCreatedAt);
             case STATUS -> Comparator.comparing(Appeal::getStatus).thenComparing(Appeal::getCreatedAt);
         };
-    }
-
-    private boolean isActive(Appeal a) {
-        return a.getStatus() == AppealStatus.NEW || a.getStatus() == AppealStatus.IN_PROGRESS || a.getStatus() == AppealStatus.ESCALATED;
     }
 
     private boolean blank(String text) { return text == null || text.isBlank(); }
