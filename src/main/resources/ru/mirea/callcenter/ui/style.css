@@ -1,0 +1,32 @@
+.root-pane { -fx-background-color: #f4f6f9; -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
+.header-box { -fx-background-color: white; -fx-border-color: #dde2ea; -fx-border-width: 0 0 1 0; }
+.title { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d; }
+.filter-bar .text-field, .filter-bar .combo-box, .filter-bar .date-picker { -fx-background-radius: 6; }
+
+.table-view { -fx-background-color: white; -fx-table-cell-border-color: #eef1f5; }
+.table-view .column-header-background { -fx-background-color: #eaeff5; }
+.table-view .column-header .label { -fx-font-weight: bold; -fx-text-fill: #34495e; }
+.table-row-cell:selected { -fx-background-color: #cfe3ff; }
+
+.button-bar { -fx-background-color: white; -fx-border-color: #dde2ea; -fx-border-width: 1 0 0 0; }
+.primary-button, .secondary-button, .danger-button { -fx-background-radius: 6; -fx-padding: 7 16; -fx-cursor: hand; }
+.primary-button { -fx-background-color: #2f6fed; -fx-text-fill: white; }
+.primary-button:hover { -fx-background-color: #1f5bd1; }
+.secondary-button { -fx-background-color: #e3e8ef; -fx-text-fill: #1f2d3d; }
+.secondary-button:hover { -fx-background-color: #d3dae4; }
+.danger-button { -fx-background-color: #d9534f; -fx-text-fill: white; }
+.danger-button:hover { -fx-background-color: #b9413d; }
+
+.info-label { -fx-text-fill: #5c6b7a; }
+.error-label { -fx-text-fill: #c0392b; -fx-font-weight: bold; }
+
+.form-label { -fx-text-fill: #5c6b7a; -fx-font-weight: bold; }
+.section-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #1f2d3d; }
+.hint-label { -fx-text-fill: #8493a3; -fx-font-size: 12px; }
+
+.text-field:focused, .text-area:focused, .combo-box:focused { -fx-border-color: #2f6fed; -fx-border-radius: 4; }
+.field-error, .field-error:focused { -fx-border-color: #d9534f; -fx-border-width: 2; -fx-border-radius: 4; }
+
+.stat-tile { -fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #dde2ea; -fx-border-radius: 8; -fx-padding: 14 16; -fx-spacing: 4; }
+.stat-value { -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2f6fed; }
+.stat-caption { -fx-text-fill: #5c6b7a; }

@@ -11,7 +11,7 @@ import ru.mirea.callcenter.util.ExcelExporter;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +19,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class CallCenterIntegrationTest {
+    private static AppealFilter filter(String text, AppealStatus status, LocalDate from, LocalDate to,
+                                       AppealFilter.SortField sort) {
+        return new AppealFilter(text, status, null, from, to, sort);
+    }
+
     @Test
     void fourEntitiesBusinessRulesSearchStatisticsAndExport() throws Exception {
         assumeTrue(System.getenv("CALLCENTER_DB_URL") != null, "Set CALLCENTER_DB_URL to an isolated test database");
@@ -58,20 +63,24 @@ class CallCenterIntegrationTest {
             appeals.updateDetails(appeal);
             assertEquals(appeal.getTopic(), appeals.getById(appeal.getId()).getTopic());
             assertThrows(BusinessException.class, () -> appeals.changeStatus(appealId, AppealStatus.CLOSED));
-            assertFalse(appeals.searchClient("Обновлённый клиент").isEmpty());
-            assertFalse(appeals.searchTopic(suffix).isEmpty());
-            assertTrue(appeals.filterByStatus(AppealStatus.NEW).stream().anyMatch(a -> a.getId().equals(appealId)));
-            assertTrue(appeals.filterByCreatedRange(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1))
+            assertFalse(appeals.find(filter("Обновлённый клиент", null, null, null, AppealFilter.SortField.ID)).isEmpty());
+            assertFalse(appeals.find(filter(suffix, null, null, null, AppealFilter.SortField.ID)).isEmpty());
+            assertTrue(appeals.find(filter(null, AppealStatus.NEW, null, null, AppealFilter.SortField.ID))
                     .stream().anyMatch(a -> a.getId().equals(appealId)));
-            assertFalse(appeals.sortByCreatedAt().isEmpty());
-            assertFalse(appeals.sortByStatus().isEmpty());
+            assertTrue(appeals.find(filter(null, null, LocalDate.now().minusDays(1), LocalDate.now().plusDays(1),
+                            AppealFilter.SortField.CREATED_NEWEST))
+                    .stream().anyMatch(a -> a.getId().equals(appealId)));
+            assertFalse(appeals.find(filter(null, null, null, null, AppealFilter.SortField.STATUS)).isEmpty());
+            assertThrows(BusinessException.class, () -> appeals.find(
+                    filter(null, null, LocalDate.now(), LocalDate.now().minusDays(1), AppealFilter.SortField.ID)));
 
             appeals.changeStatus(appeal.getId(), AppealStatus.IN_PROGRESS);
             appeals.changeStatus(appeal.getId(), AppealStatus.ESCALATED);
             appeals.changeStatus(appeal.getId(), AppealStatus.RESOLVED);
             appeals.changeStatus(appeal.getId(), AppealStatus.CLOSED);
             assertNotNull(appeals.getById(appeal.getId()).getClosedAt());
-            assertTrue(appeals.statistics().contains("Всего обращений"));
+            assertTrue(appeals.statistics(appeals.getAll()).total() > 0);
+            assertNotNull(appeals.getDetails(appealId).operator());
 
             Path directory = Files.createTempDirectory("callcenter-export-");
             Path xlsx = directory.resolve("appeals.xlsx");

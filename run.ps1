@@ -1,47 +1,29 @@
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$localJdk = Get-ChildItem (Join-Path $projectRoot '.tools\jdk17') -Directory -ErrorAction SilentlyContinue |
-    Where-Object { Test-Path (Join-Path $_.FullName 'bin\java.exe') } | Select-Object -First 1
-$localMaven = Join-Path $projectRoot '.tools\apache-maven-3.9.11\bin'
+Set-Location $projectRoot
 
-if ($localJdk) {
-    $env:JAVA_HOME = $localJdk.FullName
-    $env:PATH = "$($localJdk.FullName)\bin;$env:PATH"
-}
-if (Test-Path $localMaven) {
-    $env:PATH = "$localMaven;$env:PATH"
-    $mavenRepo = Join-Path $projectRoot '.tools\m2'
-    $mavenHome = Join-Path $projectRoot '.tools\home'
-    $env:MAVEN_OPTS = "-Duser.home=$mavenHome"
-}
 if (-not (Get-Command mvn -ErrorAction SilentlyContinue)) {
-    throw 'Maven not found. Install Maven 3.9+ or place it in .tools/apache-maven-3.9.11.'
+    throw 'Maven не найден. Установите Maven 3.9+ и добавьте его в PATH.'
 }
-$env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8"
-[Console]::InputEncoding = [System.Text.Encoding]::UTF8
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-chcp 65001 | Out-Null
+$javaVersion = cmd /c "java -version 2>&1" | Select-Object -First 1
+if ($javaVersion -notmatch '"21') {
+    Write-Warning "Нужна Java 21, найдено: $javaVersion. Проверьте JAVA_HOME."
+}
 
+# Если адрес БД не задан переменной окружения, используется localhost:5432 из database.properties.
 if (-not $env:CALLCENTER_DB_URL) {
-    $postgresBin = Join-Path $env:ProgramFiles 'PostgreSQL\18\bin'
-    $pgReady = Join-Path $postgresBin 'pg_isready.exe'
-    $pgCtl = Join-Path $postgresBin 'pg_ctl.exe'
-    $localData = Join-Path $projectRoot '.tools\pg-check'
-    if (Test-Path $pgReady) {
-        & $pgReady -h localhost -p 5432 | Out-Null
-        if ($LASTEXITCODE -ne 0 -and (Test-Path (Join-Path $localData 'PG_VERSION'))) {
-            & $pgCtl -D $localData -l (Join-Path $projectRoot '.tools\pg-check.log') -o '-p 5432 -h localhost' start
-            & $pgReady -h localhost -p 5432 | Out-Null
+    $client = New-Object System.Net.Sockets.TcpClient
+    try { $client.Connect('localhost', 5432); $dbUp = $true } catch { $dbUp = $false } finally { $client.Dispose() }
+    if (-not $dbUp) {
+        if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+            throw 'PostgreSQL не отвечает на localhost:5432, а Docker не найден. Запустите PostgreSQL или задайте CALLCENTER_DB_URL.'
         }
-        if ($LASTEXITCODE -ne 0) {
-            throw 'PostgreSQL is not available on localhost:5432. Start postgresql-x64-18 as administrator or configure CALLCENTER_DB_URL.'
-        }
+        Write-Host 'PostgreSQL не отвечает, запускаю контейнер из docker-compose.yml...'
+        docker compose up -d --wait
+        if ($LASTEXITCODE -ne 0) { throw 'Не удалось запустить PostgreSQL через Docker. Проверьте, что Docker Desktop запущен.' }
     }
 }
 
-if ($mavenRepo) {
-    mvn "-Dmaven.repo.local=$mavenRepo" compile exec:java
-} else {
-    mvn compile exec:java
-}
+$env:JAVA_TOOL_OPTIONS = '-Dfile.encoding=UTF-8'
+mvn javafx:run
