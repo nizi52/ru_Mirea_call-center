@@ -17,7 +17,6 @@ import ru.mirea.callcenter.service.AppealStatistics;
 import ru.mirea.callcenter.ui.AppContext;
 import ru.mirea.callcenter.ui.util.AlertUtil;
 import ru.mirea.callcenter.ui.util.Labels;
-import ru.mirea.callcenter.ui.util.Refreshable;
 import ru.mirea.callcenter.ui.util.UiErrors;
 import ru.mirea.callcenter.ui.util.WindowFactory;
 import javafx.stage.FileChooser;
@@ -30,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 
+/** Вкладка «Обращения»: таблица, поиск, фильтры, статусы, статистика и экспорт. */
 public class MainController implements Refreshable {
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
@@ -44,14 +44,12 @@ public class MainController implements Refreshable {
     @FXML private DatePicker fromDate;
     @FXML private DatePicker toDate;
     @FXML private ComboBox<SortField> sortBox;
-    @FXML private CheckBox activeOnlyCheck;
     @FXML private TableView<Appeal> appealTable;
     @FXML private TableColumn<Appeal, String> clientColumn;
     @FXML private TableColumn<Appeal, String> phoneColumn;
     @FXML private TableColumn<Appeal, String> topicColumn;
     @FXML private TableColumn<Appeal, String> categoryColumn;
     @FXML private TableColumn<Appeal, String> statusColumn;
-    @FXML private TableColumn<Appeal, String> activeColumn;
     @FXML private TableColumn<Appeal, String> operatorColumn;
     @FXML private TableColumn<Appeal, LocalDateTime> createdColumn;
     @FXML private TableColumn<Appeal, LocalDateTime> closedColumn;
@@ -84,7 +82,6 @@ public class MainController implements Refreshable {
         topicColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getTopic()));
         categoryColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(Labels.category(c.getValue().getCategory())));
         statusColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(Labels.status(c.getValue().getStatus())));
-        activeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().isActive() ? "Да" : "Нет"));
         operatorColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
                 c.getValue().getOperatorName() == null ? "не назначен" : c.getValue().getOperatorName()));
         createdColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getCreatedAt()));
@@ -119,7 +116,6 @@ public class MainController implements Refreshable {
         fromDate.valueProperty().addListener((obs, old, now) -> reload());
         toDate.valueProperty().addListener((obs, old, now) -> reload());
         sortBox.valueProperty().addListener((obs, old, now) -> reload());
-        activeOnlyCheck.selectedProperty().addListener((obs, old, now) -> reload());
     }
 
     private <T> StringConverter<T> converter(Function<T, String> toText) {
@@ -133,22 +129,14 @@ public class MainController implements Refreshable {
 
     private AppealFilter currentFilter() {
         return new AppealFilter(searchField.getText(), statusFilter.getValue(), categoryFilter.getValue(),
-                fromDate.getValue(), toDate.getValue(), sortBox.getValue(), activeOnlyCheck.isSelected());
+                fromDate.getValue(), toDate.getValue(), sortBox.getValue());
     }
-
-    /** Вызывается после изменений в любом окне (например, переименовали клиента). */
-    @Override
-    public void refresh() { reload(); }
 
     private void reload() {
         if (suppressReload) return;
-        Appeal selected = appealTable.getSelectionModel().getSelectedItem();
         try {
             List<Appeal> found = appealService.find(currentFilter());
             appeals.setAll(found);
-            // после перезагрузки возвращаем выделение на то же обращение
-            if (selected != null) found.stream().filter(a -> a.getId().equals(selected.getId())).findFirst()
-                    .ifPresent(a -> appealTable.getSelectionModel().select(a));
             showInfo("Показано обращений: " + found.size(), false);
         } catch (Exception e) {
             showInfo(UiErrors.message(e), true);
@@ -165,6 +153,10 @@ public class MainController implements Refreshable {
 
     @FXML
     private void onRefresh() { reload(); }
+
+    /** Вызывается при переходе на вкладку: клиенты и операторы могли измениться на других вкладках. */
+    @Override
+    public void refresh() { reload(); }
 
     @FXML
     private void onAdd() { openForm(null); }
@@ -216,7 +208,7 @@ public class MainController implements Refreshable {
             Appeal fresh = appeal == null ? null : appealService.getById(appeal.getId());
             AppealFormController form = WindowFactory.<AppealFormController>openModal(owner(), "appeal-form.fxml",
                     appeal == null ? "Новое обращение" : "Редактирование обращения", c -> c.setAppeal(fresh));
-            if (form.isSaved()) WindowFactory.refreshAll();
+            if (form.isSaved()) reload();
         });
     }
 
@@ -231,7 +223,6 @@ public class MainController implements Refreshable {
         fromDate.setValue(null);
         toDate.setValue(null);
         sortBox.setValue(SortField.CREATED_NEWEST);
-        activeOnlyCheck.setSelected(false);
         suppressReload = false;
         reload();
     }
@@ -252,7 +243,7 @@ public class MainController implements Refreshable {
         dialog.setHeaderText("Текущий статус: " + Labels.status(selected.getStatus()));
         dialog.setContentText("Новый статус:");
         dialog.showAndWait().ifPresent(choice -> {
-            if (AlertUtil.run(() -> appealService.changeStatus(selected.getId(), options.get(choice)))) WindowFactory.refreshAll();
+            if (AlertUtil.run(() -> appealService.changeStatus(selected.getId(), options.get(choice)))) reload();
         });
     }
 
@@ -263,7 +254,7 @@ public class MainController implements Refreshable {
         boolean confirmed = AlertUtil.confirm("Удаление обращения",
                 "Удалить обращение клиента «" + selected.getClientName() + "»?",
                 "Тема: " + selected.getTopic() + "\nДействие нельзя отменить.");
-        if (confirmed && AlertUtil.run(() -> appealService.delete(selected.getId()))) WindowFactory.refreshAll();
+        if (confirmed && AlertUtil.run(() -> appealService.delete(selected.getId()))) reload();
     }
 
     private Appeal requireSelection() {

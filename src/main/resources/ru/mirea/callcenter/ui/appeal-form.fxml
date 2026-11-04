@@ -14,7 +14,12 @@
             <ColumnConstraints hgrow="ALWAYS"/>
         </columnConstraints>
         <Label text="Клиент *" styleClass="form-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-        <ComboBox fx:id="clientBox" maxWidth="Infinity" promptText="Выберите клиента" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <HBox spacing="6" GridPane.rowIndex="0" GridPane.columnIndex="1">
+            <ComboBox fx:id="clientBox" maxWidth="Infinity" HBox.hgrow="ALWAYS" promptText="Выберите клиента"/>
+            <Button text="+" onAction="#onAddClient" styleClass="secondary-button">
+                <tooltip><Tooltip text="Новый клиент"/></tooltip>
+            </Button>
+        </HBox>
 
         <Label text="Оператор" styleClass="form-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
         <HBox spacing="6" GridPane.rowIndex="1" GridPane.columnIndex="1">

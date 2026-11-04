@@ -1,73 +1,48 @@
 package ru.mirea.callcenter.ui.controller;
 
-import javafx.beans.property.ReadOnlyLongWrapper;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableColumn;
 import ru.mirea.callcenter.model.Client;
+import ru.mirea.callcenter.service.ClientService;
 import ru.mirea.callcenter.ui.AppContext;
 import ru.mirea.callcenter.ui.util.WindowFactory;
 
 import java.util.List;
-import java.util.Map;
 
-public class ClientsController extends EntityListController<Client> {
-    @FXML private TableColumn<Client, String> nameColumn, phoneColumn, emailColumn, activeColumn;
-    @FXML private CheckBox activeOnlyCheck;
-    @FXML private TableColumn<Client, Number> appealsColumn;
+public class ClientsController extends CrudTabController<Client> {
+    private final ClientService clientService = AppContext.clients();
 
-    /** Сколько обращений у каждого клиента (client_id → количество). */
-    private Map<Integer, Long> appealCounts = Map.of();
+    @FXML private TableColumn<Client, Integer> idColumn;
+    @FXML private TableColumn<Client, String> nameColumn;
+    @FXML private TableColumn<Client, String> phoneColumn;
+    @FXML private TableColumn<Client, String> emailColumn;
 
     @Override
     protected void setupColumns() {
+        idColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getId()));
         nameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getFullName()));
         phoneColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getPhone()));
-        emailColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                c.getValue().getEmail() == null ? "—" : c.getValue().getEmail()));
-        activeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().isActive() ? "Активен" : "Неактивен"));
-        appealsColumn.setCellValueFactory(c -> new ReadOnlyLongWrapper(appealCounts.getOrDefault(c.getValue().getId(), 0L)));
+        emailColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getEmail()));
     }
 
     @Override
-    protected void setupExtraFilters() {
-        activeOnlyCheck.selectedProperty().addListener((obs, old, now) -> applyFilter());
+    protected List<Client> load(String query) throws Exception { return clientService.search(query); }
+
+    @Override
+    protected boolean openForm(Client editing) throws Exception {
+        ClientFormController form = WindowFactory.openModal(window(), "client-form.fxml",
+                editing == null ? "Новый клиент" : "Редактирование клиента", f -> f.setClient(editing));
+        return form.getSaved() != null;
     }
 
     @Override
-    protected boolean extraFilter(Client c) { return !activeOnlyCheck.isSelected() || c.isActive(); }
+    protected void delete(Client item) throws Exception { clientService.delete(item.getId()); }
 
     @Override
-    protected List<Client> load() throws Exception {
-        appealCounts = AppContext.appeals().countByClient();
-        return AppContext.clients().getAll();
-    }
+    protected String describe(Client item) { return "клиента «" + item.getFullName() + "»"; }
 
     @Override
-    protected boolean matches(Client c, String q) {
-        return contains(c.getFullName(), q) || contains(c.getPhone(), q) || contains(c.getEmail(), q);
-    }
-
-    @Override protected Integer idOf(Client c) { return c.getId(); }
-    @Override protected String countCaption() { return "Показано клиентов"; }
-
-    @Override
-    protected boolean openForm(Client client) throws Exception {
-        Client fresh = client == null ? null : AppContext.clients().getById(client.getId());
-        return WindowFactory.<ClientFormController>openModal(owner(), "client-form.fxml",
-                client == null ? "Новый клиент" : "Редактирование клиента", c -> c.setEntity(fresh)).isSaved();
-    }
-
-    @Override
-    protected String deleteQuestion(Client c) { return "Удалить клиента «" + c.getFullName() + "»?"; }
-
-    @Override
-    protected void delete(Client c) throws Exception { AppContext.clients().delete(c.getId()); }
-
-    @FXML
-    private void onResetFilters() {
-        searchField.clear();
-        activeOnlyCheck.setSelected(false);
-    }
+    protected String countText(int count) { return "Клиентов: " + count; }
 }

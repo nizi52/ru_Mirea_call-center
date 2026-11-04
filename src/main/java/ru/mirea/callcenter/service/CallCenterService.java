@@ -4,52 +4,55 @@ import ru.mirea.callcenter.exception.BusinessException;
 import ru.mirea.callcenter.exception.EntityNotFoundException;
 import ru.mirea.callcenter.model.CallCenter;
 import ru.mirea.callcenter.repository.CallCenterRepository;
-import ru.mirea.callcenter.repository.Repository;
-import ru.mirea.callcenter.util.DbErrors;
 
 import java.sql.SQLException;
 import java.util.List;
 
 public class CallCenterService {
-    private final Repository<CallCenter, Integer> repository;
+    private final CallCenterRepository repository;
 
     public CallCenterService(CallCenterRepository repository) { this.repository = repository; }
+
     public List<CallCenter> getAll() throws SQLException { return repository.findAll(); }
-    public List<CallCenter> getActive() throws SQLException { return getAll().stream().filter(CallCenter::isActive).toList(); }
+
+    public List<CallCenter> getActive() throws SQLException { return repository.findAll().stream().filter(CallCenter::isActive).toList(); }
+
+    /** Поиск по названию и адресу. Пустой запрос — все колл-центры. */
+    public List<CallCenter> search(String query) throws SQLException {
+        String q = Text.normalize(query);
+        return repository.findAll().stream()
+                .filter(d -> q.isEmpty() || Text.contains(d.getName(), q) || Text.contains(d.getAddress(), q))
+                .toList();
+    }
+
     public CallCenter getById(int id) throws SQLException {
         return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Колл-центр с ID " + id + " не найден."));
     }
-    public CallCenter create(CallCenter callCenter) throws SQLException { validate(callCenter); return save(callCenter); }
-    public CallCenter update(CallCenter callCenter) throws SQLException { getById(callCenter.getId()); validate(callCenter); return save(callCenter); }
+
+    public CallCenter create(CallCenter callCenter) throws SQLException { validate(callCenter); return repository.save(callCenter); }
+
+    public CallCenter update(CallCenter callCenter) throws SQLException { getById(callCenter.getId()); validate(callCenter); return repository.save(callCenter); }
+
     public void delete(int id) throws SQLException {
         getById(id);
-        try {
-            if (!repository.deleteById(id)) throw new EntityNotFoundException("Колл-центр с ID " + id + " не найден.");
-        } catch (SQLException e) {
-            if (DbErrors.isForeignKeyViolation(e))
-                throw new BusinessException("Нельзя удалить колл-центр: в нём есть операторы. Переведите их в другой колл-центр или сделайте колл-центр неактивным.");
-            throw e;
-        }
+        int operators = repository.countOperators(id);
+        if (operators > 0)
+            throw new BusinessException("Нельзя удалить колл-центр: в нём числятся операторы (" + operators
+                    + "). Переведите их в другой колл-центр или сделайте колл-центр неактивным.");
+        if (!repository.deleteById(id)) throw new EntityNotFoundException("Колл-центр с ID " + id + " не найден.");
     }
 
-    private CallCenter save(CallCenter callCenter) throws SQLException {
-        try {
-            return repository.save(callCenter);
-        } catch (SQLException e) {
-            if (DbErrors.isUniqueViolation(e))
-                throw new BusinessException("name", "Поле «Название»: колл-центр с таким названием уже есть.");
-            throw e;
-        }
+    private void validate(CallCenter callCenter) throws SQLException {
+        String name = Text.trim(callCenter.getName());
+        String address = Text.trim(callCenter.getAddress());
+        if (name.isEmpty()) throw new BusinessException("name", "Укажите название колл-центра.");
+        if (name.length() > 80) throw new BusinessException("name", "Название не длиннее 80 символов.");
+        if (address.isEmpty()) throw new BusinessException("address", "Укажите адрес колл-центра.");
+        if (address.length() > 200) throw new BusinessException("address", "Адрес не длиннее 200 символов.");
+        boolean nameTaken = repository.findAll().stream()
+                .anyMatch(d -> d.getName().equalsIgnoreCase(name) && !d.getId().equals(callCenter.getId()));
+        if (nameTaken) throw new BusinessException("name", "Колл-центр с таким названием уже есть.");
+        callCenter.setName(name);
+        callCenter.setAddress(address);
     }
-
-    private void validate(CallCenter c) {
-        if (blank(c.getName())) throw new BusinessException("name", "Поле «Название»: введите название колл-центра.");
-        if (c.getName().trim().length() > 80) throw new BusinessException("name", "Поле «Название»: не более 80 символов.");
-        if (blank(c.getAddress())) throw new BusinessException("address", "Поле «Адрес»: введите адрес.");
-        if (c.getAddress().trim().length() > 200) throw new BusinessException("address", "Поле «Адрес»: не более 200 символов.");
-        c.setName(c.getName().trim());
-        c.setAddress(c.getAddress().trim());
-    }
-
-    private boolean blank(String s) { return s == null || s.isBlank(); }
 }

@@ -34,4 +34,13 @@ public class OperatorRepository implements Repository<Operator, Integer> {
     }
     private void fill(PreparedStatement ps,Operator o)throws SQLException { ps.setString(1,o.getFullName());ps.setString(2,o.getLogin());ps.setInt(3,o.getCallCenterId());ps.setBoolean(4,o.isActive()); }
     private Operator map(ResultSet rs)throws SQLException { return new Operator(rs.getInt("id"),rs.getString("full_name"),rs.getString("login"),rs.getInt("call_center_id"),rs.getString("call_center_name"),rs.getBoolean("is_active")); }
+
+    /** Обращения оператора не в статусе NEW: без оператора они нарушат CHECK working_requires_operator. */
+    public int countWorkingAppeals(int operatorId) throws SQLException {
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement p = c.prepareStatement("SELECT count(*) FROM appeals WHERE operator_id=? AND status<>'NEW'")) {
+            p.setInt(1, operatorId);
+            try (ResultSet r = p.executeQuery()) { r.next(); return r.getInt(1); }
+        }
+    }
 }

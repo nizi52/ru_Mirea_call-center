@@ -1,92 +1,97 @@
 package ru.mirea.callcenter.ui.controller;
 
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
+import javafx.util.StringConverter;
 import ru.mirea.callcenter.model.CallCenter;
 import ru.mirea.callcenter.model.Operator;
-import ru.mirea.callcenter.service.AppealService;
+import ru.mirea.callcenter.service.OperatorService;
 import ru.mirea.callcenter.ui.AppContext;
-import ru.mirea.callcenter.ui.util.Converters;
 import ru.mirea.callcenter.ui.util.WindowFactory;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
-public class OperatorsController extends EntityListController<Operator> {
-    @FXML private TableColumn<Operator, String> nameColumn, loginColumn, callCenterColumn, activeColumn, loadColumn;
+public class OperatorsController extends CrudTabController<Operator> {
+    private final OperatorService operatorService = AppContext.operators();
+    private boolean suppressReload;
+
     @FXML private ComboBox<CallCenter> callCenterFilter;
-    @FXML private CheckBox activeOnlyCheck;
-
-    /** Активные обращения по операторам (operator_id → количество). */
-    private Map<Integer, Long> activeCounts = Map.of();
+    @FXML private CheckBox activeOnly;
+    @FXML private TableColumn<Operator, Integer> idColumn;
+    @FXML private TableColumn<Operator, String> nameColumn;
+    @FXML private TableColumn<Operator, String> loginColumn;
+    @FXML private TableColumn<Operator, String> callCenterColumn;
+    @FXML private TableColumn<Operator, String> activeColumn;
 
     @Override
     protected void setupColumns() {
+        idColumn.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getId()));
         nameColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getFullName()));
         loginColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getLogin()));
         callCenterColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getCallCenterName()));
         activeColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().isActive() ? "Активен" : "Неактивен"));
-        loadColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(
-                activeCounts.getOrDefault(c.getValue().getId(), 0L) + " из " + AppealService.maxActivePerOperator()));
     }
 
     @Override
-    protected void setupExtraFilters() {
-        callCenterFilter.setConverter(Converters.of(CallCenter::getName));
-        callCenterFilter.valueProperty().addListener((obs, old, now) -> applyFilter());
-        activeOnlyCheck.selectedProperty().addListener((obs, old, now) -> applyFilter());
+    protected void setupFilters() {
+        callCenterFilter.setConverter(new StringConverter<>() {
+            @Override public String toString(CallCenter d) { return d == null ? "" : d.getName(); }
+            @Override public CallCenter fromString(String s) { return null; }
+        });
+        callCenterFilter.valueProperty().addListener((obs, old, now) -> { if (!suppressReload) reload(); });
+        activeOnly.selectedProperty().addListener((obs, old, now) -> reload());
     }
 
     @Override
-    protected boolean extraFilter(Operator o) {
-        CallCenter cc = callCenterFilter.getValue();
-        return (cc == null || Objects.equals(cc.getId(), o.getCallCenterId()))
-                && (!activeOnlyCheck.isSelected() || o.isActive());
+    public void refresh() {
+        // список колл-центров мог измениться на соседней вкладке
+        CallCenter current = callCenterFilter.getValue();
+        suppressReload = true;
+        try {
+            List<CallCenter> all = AppContext.callCenters().getAll();
+            callCenterFilter.setItems(FXCollections.observableArrayList(all));
+            callCenterFilter.setValue(current == null ? null : all.stream()
+                    .filter(d -> d.getId().equals(current.getId())).findFirst().orElse(null));
+        } catch (Exception ignored) {
+            // ошибку подключения покажет reload() ниже
+        } finally {
+            suppressReload = false;
+        }
+        reload();
     }
 
     @Override
-    protected List<Operator> load() throws Exception {
-        activeCounts = AppContext.appeals().activeCountByOperator();
-        // список колл-центров для фильтра обновляем, сохраняя выбранный
-        Integer chosen = callCenterFilter.getValue() == null ? null : callCenterFilter.getValue().getId();
-        List<CallCenter> centers = AppContext.callCenters().getAll();
-        callCenterFilter.setItems(FXCollections.observableArrayList(centers));
-        centers.stream().filter(c -> c.getId().equals(chosen)).findFirst().ifPresent(callCenterFilter::setValue);
-        return AppContext.operators().getAll();
+    protected List<Operator> load(String query) throws Exception {
+        CallCenter callCenter = callCenterFilter.getValue();
+        return operatorService.search(query, callCenter == null ? null : callCenter.getId(), activeOnly.isSelected());
     }
 
     @Override
-    protected boolean matches(Operator o, String q) {
-        return contains(o.getFullName(), q) || contains(o.getLogin(), q) || contains(o.getCallCenterName(), q);
-    }
-
-    @Override protected Integer idOf(Operator o) { return o.getId(); }
-    @Override protected String countCaption() { return "Показано операторов"; }
-
-    @Override
-    protected boolean openForm(Operator operator) throws Exception {
-        Operator fresh = operator == null ? null : AppContext.operators().getById(operator.getId());
-        return WindowFactory.<OperatorFormController>openModal(owner(), "operator-form.fxml",
-                operator == null ? "Новый оператор" : "Редактирование оператора", c -> c.setEntity(fresh)).isSaved();
-    }
-
-    @Override
-    protected String deleteQuestion(Operator o) {
-        return "Удалить оператора «" + o.getFullName() + "»?\nЕго новые обращения станут неназначенными.";
-    }
-
-    @Override
-    protected void delete(Operator o) throws Exception { AppContext.operators().delete(o.getId()); }
-
-    @FXML
-    private void onResetFilters() {
-        searchField.clear();
+    protected void resetExtraFilters() {
+        suppressReload = true;
         callCenterFilter.setValue(null);
-        activeOnlyCheck.setSelected(false);
+        activeOnly.setSelected(false);
+        suppressReload = false;
     }
+
+    @Override
+    protected boolean openForm(Operator editing) throws Exception {
+        OperatorFormController form = WindowFactory.openModal(window(), "operator-form.fxml",
+                editing == null ? "Новый оператор" : "Редактирование оператора", f -> f.setOperator(editing));
+        return form.isSaved();
+    }
+
+    @Override
+    protected void delete(Operator item) throws Exception { operatorService.delete(item.getId()); }
+
+    @Override
+    protected String describe(Operator item) { return "оператора «" + item.getFullName() + "»"; }
+
+    @Override
+    protected String countText(int count) { return "Операторов: " + count; }
 }

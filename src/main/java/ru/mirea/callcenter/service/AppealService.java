@@ -22,8 +22,6 @@ public class AppealService {
         this.clientService = clientService;
     }
 
-    public static int maxActivePerOperator() { return MAX_ACTIVE_PER_OPERATOR; }
-
     public static List<String> categories() { return List.of("TECH", "COMPLAINT", "CONSULTATION", "BILLING"); }
 
     // ---------- CRUD ----------
@@ -39,7 +37,7 @@ public class AppealService {
         appeal.setStatus(AppealStatus.NEW);
         appeal.setCreatedAt(LocalDateTime.now());
         appeal.setClosedAt(null);
-        validateFields(appeal, null);
+        validateFields(appeal);
         validateAssignment(appeal, null);
         return repository.save(appeal);
     }
@@ -49,7 +47,7 @@ public class AppealService {
         edited.setStatus(old.getStatus());
         edited.setCreatedAt(old.getCreatedAt());
         edited.setClosedAt(old.getClosedAt());
-        validateFields(edited, old);
+        validateFields(edited);
         validateAssignment(edited, old);
         return repository.save(edited);
     }
@@ -80,7 +78,6 @@ public class AppealService {
         String q = f.text() == null ? "" : f.text().trim().toLowerCase();
         return getAll().stream()
                 .filter(a -> q.isEmpty() || matchesText(a, q))
-                .filter(a -> !f.activeOnly() || a.isActive())
                 .filter(a -> f.status() == null || a.getStatus() == f.status())
                 .filter(a -> f.category() == null || a.getCategory().equals(f.category()))
                 .filter(a -> f.from() == null || !a.getCreatedAt().toLocalDate().isBefore(f.from()))
@@ -95,12 +92,6 @@ public class AppealService {
         Operator operator = appeal.getOperatorId() == null ? null : operatorService.getById(appeal.getOperatorId());
         return new AppealDetails(appeal, client, operator);
     }
-
-    /** Сколько активных обращений у каждого оператора (для окна «Операторы»). */
-    public Map<Integer, Long> activeCountByOperator() throws SQLException { return repository.countActiveGroupedByOperator(); }
-
-    /** Сколько всего обращений у каждого клиента (для окна «Клиенты»). */
-    public Map<Integer, Long> countByClient() throws SQLException { return repository.countGroupedByClient(); }
 
     public AppealStatistics statistics(List<Appeal> appeals) { return AppealStatistics.of(appeals); }
 
@@ -117,7 +108,7 @@ public class AppealService {
 
     // ---------- Валидация ----------
 
-    private void validateFields(Appeal a, Appeal previous) throws SQLException {
+    private void validateFields(Appeal a) throws SQLException {
         if (a.getClientId() == null) throw new BusinessException("client", "Поле «Клиент»: выберите клиента из списка.");
         if (blank(a.getTopic())) throw new BusinessException("topic", "Поле «Тема»: введите тему обращения.");
         int length = a.getTopic().trim().length();
@@ -127,10 +118,6 @@ public class AppealService {
             throw new BusinessException("category", "Поле «Категория»: выберите категорию из списка.");
         a.setTopic(a.getTopic().trim());
         Client client = clientService.getById(a.getClientId());
-        // старое обращение неактивного клиента можно править, а новое на него завести нельзя
-        boolean sameClient = previous != null && Objects.equals(previous.getClientId(), a.getClientId());
-        if (!sameClient && !client.isActive())
-            throw new BusinessException("client", "Поле «Клиент»: клиент неактивен, на него нельзя завести обращение.");
         a.setClientName(client.getFullName());
         a.setClientPhone(client.getPhone());
     }
@@ -143,7 +130,7 @@ public class AppealService {
         boolean unchanged = previous != null && Objects.equals(previous.getOperatorId(), a.getOperatorId());
         if (!unchanged && !operator.isActive())
             throw new BusinessException("operator", "Поле «Оператор»: нельзя назначить неактивного оператора, выберите другого.");
-        if (!unchanged && a.isActive() && repository.countActiveByOperator(a.getOperatorId()) >= MAX_ACTIVE_PER_OPERATOR)
+        if (!unchanged && isActive(a) && repository.countActiveByOperator(a.getOperatorId()) >= MAX_ACTIVE_PER_OPERATOR)
             throw new BusinessException("operator", "Поле «Оператор»: у оператора уже " + MAX_ACTIVE_PER_OPERATOR + " активных обращений, выберите другого.");
     }
 
@@ -162,6 +149,10 @@ public class AppealService {
             case CREATED_OLDEST -> Comparator.comparing(Appeal::getCreatedAt);
             case STATUS -> Comparator.comparing(Appeal::getStatus).thenComparing(Appeal::getCreatedAt);
         };
+    }
+
+    private boolean isActive(Appeal a) {
+        return a.getStatus() == AppealStatus.NEW || a.getStatus() == AppealStatus.IN_PROGRESS || a.getStatus() == AppealStatus.ESCALATED;
     }
 
     private boolean blank(String text) { return text == null || text.isBlank(); }

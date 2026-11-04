@@ -13,6 +13,7 @@ import ru.mirea.callcenter.service.AppealService;
 import ru.mirea.callcenter.ui.AppContext;
 import ru.mirea.callcenter.ui.util.Labels;
 import ru.mirea.callcenter.ui.util.UiErrors;
+import ru.mirea.callcenter.ui.util.WindowFactory;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -39,14 +40,14 @@ public class AppealFormController {
     @FXML
     private void initialize() {
         fields = Map.of("client", clientBox, "operator", operatorBox, "category", categoryBox, "topic", topicArea);
-        clientBox.setConverter(converter(c -> c.getFullName() + ", " + c.getPhone() + (c.isActive() ? "" : " (неактивен)")));
+        clientBox.setConverter(converter(c -> c.getFullName() + ", " + c.getPhone()));
         operatorBox.setConverter(converter(o -> o.getFullName() + " (" + o.getCallCenterName() + ")"));
         categoryBox.setConverter(converter(Labels::category));
         categoryBox.setItems(FXCollections.observableArrayList(AppealService.categories()));
         topicArea.textProperty().addListener((obs, old, now) ->
                 counterLabel.setText(now.trim().length() + " / " + MAX_TOPIC));
         try {
-            clientBox.setItems(FXCollections.observableArrayList(AppContext.clients().getActive()));
+            clientBox.setItems(FXCollections.observableArrayList(AppContext.clients().getAll()));
             operatorBox.setItems(FXCollections.observableArrayList(AppContext.operators().getActive()));
         } catch (Exception e) {
             showError(null, UiErrors.message(e));
@@ -59,25 +60,11 @@ public class AppealFormController {
         this.editing = appeal;
         titleLabel.setText(appeal == null ? "Новое обращение" : "Редактирование обращения");
         if (appeal == null) return;
-        selectClient(appeal.getClientId());
+        clientBox.getItems().stream().filter(c -> c.getId().equals(appeal.getClientId()))
+                .findFirst().ifPresent(clientBox::setValue);
         selectOperator(appeal.getOperatorId());
         categoryBox.setValue(appeal.getCategory());
         topicArea.setText(appeal.getTopic());
-    }
-
-    private void selectClient(Integer clientId) {
-        try {
-            // клиент мог стать неактивным — показываем его, чтобы старое обращение можно было править
-            Client current = clientBox.getItems().stream().filter(c -> c.getId().equals(clientId))
-                    .findFirst().orElse(null);
-            if (current == null) {
-                current = AppContext.clients().getById(clientId);
-                clientBox.getItems().add(current);
-            }
-            clientBox.setValue(current);
-        } catch (Exception e) {
-            showError(null, UiErrors.message(e));
-        }
     }
 
     private void selectOperator(Integer operatorId) {
@@ -100,6 +87,21 @@ public class AppealFormController {
 
     @FXML
     private void onClearOperator() { operatorBox.setValue(null); }
+
+    @FXML
+    private void onAddClient() {
+        try {
+            ClientFormController form = WindowFactory.openModal(errorLabel.getScene().getWindow(),
+                    "client-form.fxml", "Новый клиент", null);
+            Client created = form.getSaved();
+            if (created == null) return;
+            clientBox.getItems().add(created);
+            clientBox.setValue(created);
+            clientBox.getStyleClass().remove(ERROR_STYLE);
+        } catch (Exception e) {
+            showError(null, UiErrors.message(e));
+        }
+    }
 
     @FXML
     private void onSave() {

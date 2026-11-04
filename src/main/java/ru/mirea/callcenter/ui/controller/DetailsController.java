@@ -28,7 +28,7 @@ public class DetailsController {
         closedValue.setText(format(a.getClosedAt()));
 
         Client c = details.client();
-        clientNameValue.setText(c.getFullName() + (c.isActive() ? "" : " (неактивен)"));
+        clientNameValue.setText(c.getFullName());
         clientPhoneValue.setText(c.getPhone());
         clientEmailValue.setText(c.getEmail() == null || c.getEmail().isBlank() ? "—" : c.getEmail());
 

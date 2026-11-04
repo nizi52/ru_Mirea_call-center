@@ -11,4 +11,13 @@ public class CallCenterRepository implements Repository<CallCenter,Integer> {
     @Override public CallCenter save(CallCenter x)throws SQLException{String sql=x.getId()==null?"INSERT INTO call_centers(name,address,is_active) VALUES(?,?,?)":"UPDATE call_centers SET name=?,address=?,is_active=? WHERE id=?";try(Connection c=DatabaseManager.getConnection();PreparedStatement p=c.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){p.setString(1,x.getName());p.setString(2,x.getAddress());p.setBoolean(3,x.isActive());if(x.getId()!=null)p.setInt(4,x.getId());p.executeUpdate();if(x.getId()==null)try(ResultSet k=p.getGeneratedKeys()){if(k.next())x.setId(k.getInt(1));}}return x;}
     @Override public boolean deleteById(Integer id)throws SQLException{try(Connection c=DatabaseManager.getConnection();PreparedStatement p=c.prepareStatement("DELETE FROM call_centers WHERE id=?")){p.setInt(1,id);return p.executeUpdate()>0;}}
     private CallCenter map(ResultSet r)throws SQLException{return new CallCenter(r.getInt("id"),r.getString("name"),r.getString("address"),r.getBoolean("is_active"));}
+
+    /** Сколько операторов числится в колл-центре (FK operators.call_center_id с ON DELETE RESTRICT). */
+    public int countOperators(int callCenterId) throws SQLException {
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement p = c.prepareStatement("SELECT count(*) FROM operators WHERE call_center_id=?")) {
+            p.setInt(1, callCenterId);
+            try (ResultSet r = p.executeQuery()) { r.next(); return r.getInt(1); }
+        }
+    }
 }

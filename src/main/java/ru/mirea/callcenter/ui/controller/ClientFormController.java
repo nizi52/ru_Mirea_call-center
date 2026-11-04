@@ -1,46 +1,64 @@
 package ru.mirea.callcenter.ui.controller;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 import ru.mirea.callcenter.model.Client;
+import ru.mirea.callcenter.service.ClientService;
 import ru.mirea.callcenter.ui.AppContext;
+import ru.mirea.callcenter.ui.util.FormErrors;
 
 import java.util.Map;
 
-public class ClientFormController extends EntityFormController<Client> {
-    @FXML private TextField fullNameField, phoneField, emailField;
-    @FXML private CheckBox activeCheck;
+/** Форма клиента: создание (в том числе прямо из формы обращения) и редактирование. */
+public class ClientFormController {
+    private final ClientService clientService = AppContext.clients();
+    private Client editing;
+    private Client saved;
+
+    @FXML private Label titleLabel;
+    @FXML private TextField nameField;
+    @FXML private TextField phoneField;
+    @FXML private TextField emailField;
+    @FXML private Label errorLabel;
+
+    private FormErrors errors;
 
     @FXML
-    private void initialize() { activeCheck.setSelected(true); }
-
-    @Override
-    protected Map<String, Control> fields() {
-        return Map.of("fullName", fullNameField, "phone", phoneField, "email", emailField);
+    private void initialize() {
+        errors = new FormErrors(errorLabel, Map.of("fullName", nameField, "phone", phoneField, "email", emailField));
+        titleLabel.setText("Новый клиент");
     }
 
-    @Override protected String createTitle() { return "Новый клиент"; }
-    @Override protected String editTitle() { return "Редактирование клиента"; }
-
-    @Override
-    protected void fill(Client c) {
-        fullNameField.setText(c.getFullName());
-        phoneField.setText(c.getPhone());
-        emailField.setText(c.getEmail());
-        activeCheck.setSelected(c.isActive());
+    /** null — создание нового клиента, иначе редактирование. */
+    public void setClient(Client client) {
+        this.editing = client;
+        if (client == null) return;
+        titleLabel.setText("Редактирование клиента");
+        nameField.setText(client.getFullName());
+        phoneField.setText(client.getPhone());
+        emailField.setText(client.getEmail());
     }
 
-    @Override
-    protected Client build() {
-        return new Client(editing == null ? null : editing.getId(),
-                fullNameField.getText(), phoneField.getText(), emailField.getText(), activeCheck.isSelected());
+    /** Сохранённый клиент или null, если окно закрыли без сохранения. */
+    public Client getSaved() { return saved; }
+
+    @FXML
+    private void onSave() {
+        errors.clear();
+        Client client = new Client(editing == null ? null : editing.getId(),
+                nameField.getText(), phoneField.getText(), emailField.getText());
+        try {
+            saved = editing == null ? clientService.create(client) : clientService.update(client);
+            close();
+        } catch (Exception e) {
+            errors.handle(e);
+        }
     }
 
-    @Override
-    protected void save(Client c) throws Exception {
-        if (c.getId() == null) AppContext.clients().create(c);
-        else AppContext.clients().update(c);
-    }
+    @FXML
+    private void onCancel() { close(); }
+
+    private void close() { ((Stage) errorLabel.getScene().getWindow()).close(); }
 }

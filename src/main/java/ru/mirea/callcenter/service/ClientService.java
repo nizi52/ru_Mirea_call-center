@@ -4,64 +4,58 @@ import ru.mirea.callcenter.exception.BusinessException;
 import ru.mirea.callcenter.exception.EntityNotFoundException;
 import ru.mirea.callcenter.model.Client;
 import ru.mirea.callcenter.repository.ClientRepository;
-import ru.mirea.callcenter.repository.Repository;
-import ru.mirea.callcenter.util.DbErrors;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class ClientService {
-    private static final Pattern PHONE = Pattern.compile("\\+?\\d{10,15}");
-    private static final Pattern EMAIL = Pattern.compile("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
-
-    private final Repository<Client, Integer> repository;
+    private final ClientRepository repository;
 
     public ClientService(ClientRepository repository) { this.repository = repository; }
+
     public List<Client> getAll() throws SQLException { return repository.findAll(); }
-    /** Только активные клиенты: на них можно заводить новые обращения. */
-    public List<Client> getActive() throws SQLException { return getAll().stream().filter(Client::isActive).toList(); }
+
+    /** Поиск по ФИО, телефону и e-mail (без учёта регистра). Пустой запрос — все клиенты. */
+    public List<Client> search(String query) throws SQLException {
+        String q = Text.normalize(query);
+        return repository.findAll().stream()
+                .filter(c -> q.isEmpty() || Text.contains(c.getFullName(), q)
+                        || Text.contains(c.getPhone(), q) || Text.contains(c.getEmail(), q))
+                .toList();
+    }
+
     public Client getById(int id) throws SQLException {
         return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Клиент с ID " + id + " не найден."));
     }
-    public Client create(Client client) throws SQLException { validate(client); return save(client); }
-    public Client update(Client client) throws SQLException { getById(client.getId()); validate(client); return save(client); }
+
+    public Client create(Client client) throws SQLException { validate(client); return repository.save(client); }
+
+    public Client update(Client client) throws SQLException { getById(client.getId()); validate(client); return repository.save(client); }
+
     public void delete(int id) throws SQLException {
         getById(id);
-        try {
-            if (!repository.deleteById(id)) throw new EntityNotFoundException("Клиент с ID " + id + " не найден.");
-        } catch (SQLException e) {
-            if (DbErrors.isForeignKeyViolation(e))
-                throw new BusinessException("Нельзя удалить клиента: у него есть обращения. Сначала удалите их.");
-            throw e;
-        }
+        int appeals = repository.countAppeals(id);
+        if (appeals > 0)
+            throw new BusinessException("Нельзя удалить клиента: с ним связаны обращения (" + appeals + "). Сначала удалите их.");
+        if (!repository.deleteById(id)) throw new EntityNotFoundException("Клиент с ID " + id + " не найден.");
     }
 
-    private Client save(Client client) throws SQLException {
-        try {
-            return repository.save(client);
-        } catch (SQLException e) {
-            if (DbErrors.isUniqueViolation(e))
-                throw new BusinessException("phone", "Поле «Телефон»: клиент с таким номером уже есть.");
-            throw e;
-        }
+    private void validate(Client client) throws SQLException {
+        String name = Text.trim(client.getFullName());
+        String phone = Text.trim(client.getPhone());
+        String email = Text.trim(client.getEmail());
+        if (name.isEmpty()) throw new BusinessException("fullName", "Укажите ФИО клиента.");
+        if (name.length() > 150) throw new BusinessException("fullName", "ФИО не длиннее 150 символов.");
+        if (phone.isEmpty()) throw new BusinessException("phone", "Укажите телефон клиента.");
+        if (!phone.matches("\\+?[0-9 ()-]{5,30}"))
+            throw new BusinessException("phone", "Телефон: только цифры, пробелы, скобки, дефис и «+» в начале (5–30 символов).");
+        if (!email.isEmpty() && (email.length() > 150 || !email.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")))
+            throw new BusinessException("email", "Некорректный e-mail.");
+        boolean phoneTaken = repository.findAll().stream()
+                .anyMatch(c -> c.getPhone().trim().equals(phone) && !c.getId().equals(client.getId()));
+        if (phoneTaken) throw new BusinessException("phone", "Клиент с таким телефоном уже есть.");
+        client.setFullName(name);
+        client.setPhone(phone);
+        client.setEmail(email.isEmpty() ? null : email);
     }
-
-    /** Проверяет поля и приводит их к единому виду (обрезает пробелы, пустой email → null). */
-    private void validate(Client c) {
-        if (blank(c.getFullName())) throw new BusinessException("fullName", "Поле «ФИО»: введите имя клиента.");
-        if (c.getFullName().trim().length() > 150) throw new BusinessException("fullName", "Поле «ФИО»: не более 150 символов.");
-        if (blank(c.getPhone())) throw new BusinessException("phone", "Поле «Телефон»: введите номер.");
-        String phone = c.getPhone().replaceAll("[\\s()-]", "");
-        if (!PHONE.matcher(phone).matches())
-            throw new BusinessException("phone", "Поле «Телефон»: от 10 до 15 цифр, можно с «+» в начале.");
-        String email = blank(c.getEmail()) ? null : c.getEmail().trim();
-        if (email != null && !EMAIL.matcher(email).matches())
-            throw new BusinessException("email", "Поле «Email»: неверный формат, пример: name@mail.ru.");
-        c.setFullName(c.getFullName().trim());
-        c.setPhone(phone);
-        c.setEmail(email);
-    }
-
-    private boolean blank(String s) { return s == null || s.isBlank(); }
 }

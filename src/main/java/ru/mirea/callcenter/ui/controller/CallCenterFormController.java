@@ -2,42 +2,64 @@ package ru.mirea.callcenter.ui.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 import ru.mirea.callcenter.model.CallCenter;
+import ru.mirea.callcenter.service.CallCenterService;
 import ru.mirea.callcenter.ui.AppContext;
+import ru.mirea.callcenter.ui.util.FormErrors;
 
 import java.util.Map;
 
-public class CallCenterFormController extends EntityFormController<CallCenter> {
-    @FXML private TextField nameField, addressField;
-    @FXML private CheckBox activeCheck;
+public class CallCenterFormController {
+    private final CallCenterService callCenterService = AppContext.callCenters();
+    private CallCenter editing;
+    private boolean saved;
+
+    @FXML private Label titleLabel;
+    @FXML private TextField nameField;
+    @FXML private TextField addressField;
+    @FXML private CheckBox activeBox;
+    @FXML private Label errorLabel;
+
+    private FormErrors errors;
 
     @FXML
-    private void initialize() { activeCheck.setSelected(true); }
-
-    @Override
-    protected Map<String, Control> fields() { return Map.of("name", nameField, "address", addressField); }
-
-    @Override protected String createTitle() { return "Новый колл-центр"; }
-    @Override protected String editTitle() { return "Редактирование колл-центра"; }
-
-    @Override
-    protected void fill(CallCenter c) {
-        nameField.setText(c.getName());
-        addressField.setText(c.getAddress());
-        activeCheck.setSelected(c.isActive());
+    private void initialize() {
+        errors = new FormErrors(errorLabel, Map.of("name", nameField, "address", addressField));
+        titleLabel.setText("Новый колл-центр");
     }
 
-    @Override
-    protected CallCenter build() {
-        return new CallCenter(editing == null ? null : editing.getId(),
-                nameField.getText(), addressField.getText(), activeCheck.isSelected());
+    /** null — создание нового колл-центра, иначе редактирование. */
+    public void setCallCenter(CallCenter callCenter) {
+        this.editing = callCenter;
+        if (callCenter == null) return;
+        titleLabel.setText("Редактирование колл-центра");
+        nameField.setText(callCenter.getName());
+        addressField.setText(callCenter.getAddress());
+        activeBox.setSelected(callCenter.isActive());
     }
 
-    @Override
-    protected void save(CallCenter c) throws Exception {
-        if (c.getId() == null) AppContext.callCenters().create(c);
-        else AppContext.callCenters().update(c);
+    public boolean isSaved() { return saved; }
+
+    @FXML
+    private void onSave() {
+        errors.clear();
+        CallCenter callCenter = new CallCenter(editing == null ? null : editing.getId(),
+                nameField.getText(), addressField.getText(), activeBox.isSelected());
+        try {
+            if (editing == null) callCenterService.create(callCenter);
+            else callCenterService.update(callCenter);
+            saved = true;
+            close();
+        } catch (Exception e) {
+            errors.handle(e);
+        }
     }
+
+    @FXML
+    private void onCancel() { close(); }
+
+    private void close() { ((Stage) errorLabel.getScene().getWindow()).close(); }
 }
