@@ -29,7 +29,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 
-public class MainController {
+/** Вкладка «Обращения»: таблица, поиск, фильтры, статусы, статистика и экспорт. */
+public class MainController implements Refreshable {
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final AppealService appealService = AppContext.appeals();
@@ -152,6 +153,10 @@ public class MainController {
 
     @FXML
     private void onRefresh() { reload(); }
+
+    /** Вызывается при переходе на вкладку: клиенты и операторы могли измениться на других вкладках. */
+    @Override
+    public void refresh() { reload(); }
 
     @FXML
     private void onAdd() { openForm(null); }

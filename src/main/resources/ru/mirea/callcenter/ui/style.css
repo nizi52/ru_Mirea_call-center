@@ -30,3 +30,11 @@
 .stat-tile { -fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #dde2ea; -fx-border-radius: 8; -fx-padding: 14 16; -fx-spacing: 4; }
 .stat-value { -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2f6fed; }
 .stat-caption { -fx-text-fill: #5c6b7a; }
+
+.main-tabs .tab-header-area .tab-header-background { -fx-background-color: white; -fx-border-color: #dde2ea; -fx-border-width: 0 0 1 0; }
+.main-tabs .tab { -fx-background-color: transparent; -fx-padding: 6 14; -fx-background-radius: 0; }
+.main-tabs .tab .tab-label { -fx-text-fill: #5c6b7a; -fx-font-weight: bold; }
+.main-tabs .tab:selected { -fx-border-color: #2f6fed; -fx-border-width: 0 0 3 0; }
+.main-tabs .tab:selected .tab-label { -fx-text-fill: #1f2d3d; }
+.main-tabs .tab:focused .focus-indicator { -fx-border-color: transparent; }
+.check-box { -fx-text-fill: #1f2d3d; }

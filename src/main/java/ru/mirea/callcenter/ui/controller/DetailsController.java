@@ -17,7 +17,7 @@ public class DetailsController {
 
     @FXML private Label topicValue, categoryValue, statusValue, createdValue, closedValue;
     @FXML private Label clientNameValue, clientPhoneValue, clientEmailValue;
-    @FXML private Label operatorNameValue, operatorLoginValue, operatorDepartmentValue, operatorActiveValue;
+    @FXML private Label operatorNameValue, operatorLoginValue, operatorCallCenterValue, operatorActiveValue;
 
     public void setDetails(AppealDetails details) {
         Appeal a = details.appeal();
@@ -36,12 +36,12 @@ public class DetailsController {
         if (o == null) {
             operatorNameValue.setText("не назначен");
             operatorLoginValue.setText("—");
-            operatorDepartmentValue.setText("—");
+            operatorCallCenterValue.setText("—");
             operatorActiveValue.setText("—");
         } else {
             operatorNameValue.setText(o.getFullName());
             operatorLoginValue.setText(o.getLogin());
-            operatorDepartmentValue.setText(o.getDepartmentName());
+            operatorCallCenterValue.setText(o.getCallCenterName());
             operatorActiveValue.setText(o.isActive() ? "активен" : "неактивен");
         }
     }

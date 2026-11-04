@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ru.mirea.callcenter.ui.controller.MainController" styleClass="root-pane">
+    <top>
+        <VBox spacing="12" styleClass="header-box">
+            <padding><Insets top="16" right="16" bottom="12" left="16"/></padding>
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="Обращения клиентов" styleClass="title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="infoLabel" styleClass="info-label"/>
+            </HBox>
+            <FlowPane hgap="10" vgap="8" styleClass="filter-bar">
+                <TextField fx:id="searchField" promptText="Поиск: клиент, телефон, тема" prefWidth="270"/>
+                <ComboBox fx:id="statusFilter" promptText="Статус" prefWidth="150"/>
+                <ComboBox fx:id="categoryFilter" promptText="Категория" prefWidth="150"/>
+                <DatePicker fx:id="fromDate" promptText="Создано с" prefWidth="140"/>
+                <DatePicker fx:id="toDate" promptText="Создано по" prefWidth="140"/>
+                <ComboBox fx:id="sortBox" prefWidth="160"/>
+                <Button text="Сбросить" onAction="#onResetFilters" styleClass="secondary-button"/>
+            </FlowPane>
+        </VBox>
+    </top>
+    <center>
+        <TableView fx:id="appealTable">
+            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+            <placeholder><Label text="Обращений не найдено"/></placeholder>
+            <columns>
+                <TableColumn fx:id="clientColumn" text="Клиент" prefWidth="170"/>
+                <TableColumn fx:id="phoneColumn" text="Телефон" prefWidth="120"/>
+                <TableColumn fx:id="topicColumn" text="Тема" prefWidth="220"/>
+                <TableColumn fx:id="categoryColumn" text="Категория" prefWidth="110"/>
+                <TableColumn fx:id="statusColumn" text="Статус" prefWidth="110"/>
+                <TableColumn fx:id="operatorColumn" text="Оператор" prefWidth="150"/>
+                <TableColumn fx:id="createdColumn" text="Создано" prefWidth="130"/>
+                <TableColumn fx:id="closedColumn" text="Закрыто" prefWidth="130"/>
+            </columns>
+        </TableView>
+    </center>
+    <bottom>
+        <FlowPane hgap="10" vgap="8" alignment="CENTER_LEFT" styleClass="button-bar">
+            <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+            <Button text="Добавить" onAction="#onAdd" styleClass="primary-button"/>
+            <Button fx:id="editButton" text="Изменить" onAction="#onEdit" styleClass="primary-button"/>
+            <Button fx:id="viewButton" text="Просмотр" onAction="#onView" styleClass="secondary-button"/>
+            <Button fx:id="statusButton" text="Сменить статус" onAction="#onChangeStatus" styleClass="secondary-button"/>
+            <Button fx:id="deleteButton" text="Удалить" onAction="#onDelete" styleClass="danger-button"/>
+            <Button text="Статистика" onAction="#onStats" styleClass="secondary-button"/>
+            <Button text="Экспорт" onAction="#onExport" styleClass="secondary-button"/>
+            <Button text="Обновить" onAction="#onRefresh" styleClass="secondary-button"/>
+        </FlowPane>
+    </bottom>
+</BorderPane>

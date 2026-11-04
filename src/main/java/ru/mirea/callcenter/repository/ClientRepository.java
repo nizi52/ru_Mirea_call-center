@@ -11,4 +11,13 @@ public class ClientRepository implements Repository<Client, Integer> {
     @Override public Client save(Client x) throws SQLException { String sql=x.getId()==null?"INSERT INTO clients(full_name,phone,email) VALUES(?,?,?)":"UPDATE clients SET full_name=?,phone=?,email=? WHERE id=?"; try(Connection c=DatabaseManager.getConnection();PreparedStatement p=c.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){p.setString(1,x.getFullName());p.setString(2,x.getPhone());p.setString(3,x.getEmail());if(x.getId()!=null)p.setInt(4,x.getId());p.executeUpdate();if(x.getId()==null)try(ResultSet k=p.getGeneratedKeys()){if(k.next())x.setId(k.getInt(1));}}return x; }
     @Override public boolean deleteById(Integer id)throws SQLException{try(Connection c=DatabaseManager.getConnection();PreparedStatement p=c.prepareStatement("DELETE FROM clients WHERE id=?")){p.setInt(1,id);return p.executeUpdate()>0;}}
     private Client map(ResultSet r)throws SQLException{return new Client(r.getInt("id"),r.getString("full_name"),r.getString("phone"),r.getString("email"));}
+
+    /** Сколько обращений связано с клиентом (FK appeals.client_id с ON DELETE RESTRICT). */
+    public int countAppeals(int clientId) throws SQLException {
+        try (Connection c = DatabaseManager.getConnection();
+             PreparedStatement p = c.prepareStatement("SELECT count(*) FROM appeals WHERE client_id=?")) {
+            p.setInt(1, clientId);
+            try (ResultSet r = p.executeQuery()) { r.next(); return r.getInt(1); }
+        }
+    }
 }

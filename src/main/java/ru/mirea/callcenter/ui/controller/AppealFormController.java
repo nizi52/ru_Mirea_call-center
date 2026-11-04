@@ -13,6 +13,7 @@ import ru.mirea.callcenter.service.AppealService;
 import ru.mirea.callcenter.ui.AppContext;
 import ru.mirea.callcenter.ui.util.Labels;
 import ru.mirea.callcenter.ui.util.UiErrors;
+import ru.mirea.callcenter.ui.util.WindowFactory;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -40,7 +41,7 @@ public class AppealFormController {
     private void initialize() {
         fields = Map.of("client", clientBox, "operator", operatorBox, "category", categoryBox, "topic", topicArea);
         clientBox.setConverter(converter(c -> c.getFullName() + ", " + c.getPhone()));
-        operatorBox.setConverter(converter(o -> o.getFullName() + " (" + o.getDepartmentName() + ")"));
+        operatorBox.setConverter(converter(o -> o.getFullName() + " (" + o.getCallCenterName() + ")"));
         categoryBox.setConverter(converter(Labels::category));
         categoryBox.setItems(FXCollections.observableArrayList(AppealService.categories()));
         topicArea.textProperty().addListener((obs, old, now) ->
@@ -86,6 +87,21 @@ public class AppealFormController {
 
     @FXML
     private void onClearOperator() { operatorBox.setValue(null); }
+
+    @FXML
+    private void onAddClient() {
+        try {
+            ClientFormController form = WindowFactory.openModal(errorLabel.getScene().getWindow(),
+                    "client-form.fxml", "Новый клиент", null);
+            Client created = form.getSaved();
+            if (created == null) return;
+            clientBox.getItems().add(created);
+            clientBox.setValue(created);
+            clientBox.getStyleClass().remove(ERROR_STYLE);
+        } catch (Exception e) {
+            showError(null, UiErrors.message(e));
+        }
+    }
 
     @FXML
     private void onSave() {

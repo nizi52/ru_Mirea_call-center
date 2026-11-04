@@ -28,23 +28,23 @@ class CallCenterIntegrationTest {
     void fourEntitiesBusinessRulesSearchStatisticsAndExport() throws Exception {
         assumeTrue(System.getenv("CALLCENTER_DB_URL") != null, "Set CALLCENTER_DB_URL to an isolated test database");
 
-        DepartmentService departments = new DepartmentService(new DepartmentRepository());
+        CallCenterService callCenters = new CallCenterService(new CallCenterRepository());
         ClientService clients = new ClientService(new ClientRepository());
-        OperatorService operators = new OperatorService(new OperatorRepository(), departments);
+        OperatorService operators = new OperatorService(new OperatorRepository(), callCenters);
         AppealService appeals = new AppealService(new AppealRepository(), operators, clients);
         String suffix = Long.toString(System.nanoTime());
 
-        Department department = departments.create(new Department("Тест " + suffix, "Интеграционная проверка", true));
+        CallCenter callCenter = callCenters.create(new CallCenter("Тест " + suffix, "Тестовый адрес", true));
         Client client = clients.create(new Client("Тестовый клиент", "+7" + suffix, "test@example.org"));
-        Operator operator = operators.create(new Operator(null, "Тестовый оператор", "test" + suffix, department.getId(), null, true));
+        Operator operator = operators.create(new Operator(null, "Тестовый оператор", "test" + suffix, callCenter.getId(), null, true));
         Appeal appeal = null;
         try {
-            assertEquals(department.getId(), operators.getById(operator.getId()).getDepartmentId());
+            assertEquals(callCenter.getId(), operators.getById(operator.getId()).getCallCenterId());
             assertEquals(client.getPhone(), clients.getById(client.getId()).getPhone());
             client.setFullName("Обновлённый клиент");
             clients.update(client);
-            department.setDescription("Обновлённое описание");
-            departments.update(department);
+            callCenter.setAddress("Обновлённый адрес");
+            callCenters.update(callCenter);
             operator.setFullName("Обновлённый оператор");
             operators.update(operator);
             assertEquals("Обновлённый оператор", operators.getById(operator.getId()).getFullName());
@@ -107,7 +107,7 @@ class CallCenterIntegrationTest {
             if (appeal != null) appeals.delete(appeal.getId());
             operators.delete(operator.getId());
             clients.delete(client.getId());
-            departments.delete(department.getId());
+            callCenters.delete(callCenter.getId());
         }
     }
 }
