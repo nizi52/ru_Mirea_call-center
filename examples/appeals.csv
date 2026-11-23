@@ -1,0 +1,3 @@
+externalId,clientName,topic,category,email,phone,dueDate,center,status,impactScore,urgent,tags,operatorId
+DEMO-CSV-001,Иван Петров,Не работает интернет,TECH,ivan@example.org,+79990000001,,CENTER-1,NEW,85,true,сеть|важно,
+DEMO-CSV-002,Анна Смирнова,Консультация по тарифу,CONSULTATION,anna@example.org,+79990000002,,CENTER-2,NEW,20,false,тариф,

@@ -1,0 +1,20 @@
+PASS Docker backend health
+PASS 401 without authentication
+PASS initial password enforcement and change
+PASS refresh rotation
+PASS VIEWER / EDITOR / ADMIN separation
+PASS phone formats reuse one client in appeals and reject duplicate directory entries
+PASS client/operator CRUD, roles, versions, duplicates, search and protected history
+PASS create + validation + computed priority
+PASS optimistic version conflict 409
+PASS status chain and rejected jump
+PASS search, seven filters, sorting and bounded pagination
+PASS notes CRUD, author and pin
+PASS archive, restore and partial bulk result
+PASS CSV preview/apply, two modes, BOM and export roundtrip
+PASS analytics summary
+PASS reference deactivate
+PASS disabled account denied
+PASS audit + OpenAPI
+PASS admin permanent delete and 404
+PASS logout revokes refresh session
